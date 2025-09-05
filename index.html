@@ -14,7 +14,7 @@
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .btn{padding:10px 14px;border:0;border-radius:12px;background:#111;color:#fff;cursor:pointer}
     .btn.outline{background:#fff;color:#111;border:1px solid #ddd}
-    .tabs{display:flex;gap:8px;margin:10px 0}
+    .tabs{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
     .tab-btn{padding:10px 14px;border:1px solid #ddd;border-radius:999px;background:#f9f9f9;cursor:pointer}
     .tab-btn.active{background:#111;color:#fff;border-color:#111}
     .card{border:1px solid #e6e6e6;border-radius:14px;padding:14px;margin:14px 0;background:#fff}
@@ -28,6 +28,7 @@
     details summary{cursor:pointer}
     .hint{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px;margin-top:6px}
     .sep{height:1px;background:#eee;margin:10px 0}
+    .actions{display:flex;gap:8px;flex-wrap:wrap}
   </style>
 </head>
 <body>
@@ -42,10 +43,12 @@
     </div>
   </header>
 
-  <!-- تبويب النماذج -->
+  <!-- تبويبات رئيسية: نماذج + عرض الشكايات + عرض التقارير -->
   <section class="tabs">
     <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
     <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
+    <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
+    <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
   </section>
 
   <!-- نموذج الشكوى -->
@@ -134,33 +137,18 @@
     </form>
   </section>
 
-  <!-- فلاتر المعرض -->
-  <section class="card">
-    <h2>المعروض للعامة</h2>
-    <div class="row" style="margin-top:6px">
-      <select id="typeFilter">
-        <option value="">الكل</option>
-        <option value="complaint">شكاوى (ملخصات)</option>
-        <option value="report">تقارير (نص كامل)</option>
-      </select>
-      <select id="topicFilter">
-        <option value="">كل المواضيع</option>
-        <option>شعائر</option>
-        <option>ضوضاء</option>
-        <option>نظافة</option>
-        <option>فساد إداري</option>
-        <option>أخرى</option>
-      </select>
-      <input id="cityFilter" placeholder="مدينة/مكان" />
-      <select id="sortBy">
-        <option value="newest">الأحدث أولاً</option>
-        <option value="supporters">الأكثر مؤيدين</option>
-      </select>
-      <button id="applyFilters" class="btn outline">تطبيق الفلاتر</button>
-    </div>
-    <div id="stats" class="row" style="margin-top:10px"></div>
-    <div id="list" class="grid" aria-live="polite" style="margin-top:10px"></div>
-    <div class="cta"><button id="addQuick" class="btn">قدّم مشاركتك الآن</button></div>
+  <!-- تبويب الشكايات المنشورة -->
+  <section id="complaintsListTab" class="card" style="display:none">
+    <h2>الشكايات المنشورة (بعد المراجعة)</h2>
+    <div id="complaintsStats" class="row" style="margin-top:6px"></div>
+    <div id="complaintsList" class="grid" aria-live="polite" style="margin-top:10px"></div>
+  </section>
+
+  <!-- تبويب التقارير المنشورة -->
+  <section id="reportsListTab" class="card" style="display:none">
+    <h2>التقارير المنشورة (بعد المراجعة)</h2>
+    <div id="reportsStats" class="row" style="margin-top:6px"></div>
+    <div id="reportsList" class="grid" aria-live="polite" style="margin-top:10px"></div>
   </section>
 
   <div class="sep"></div>
@@ -169,23 +157,25 @@
   </footer>
 
 <script>
-/* === اضبط هذه المتغيرات === */
-const REPO_OWNER = "YOUR_GH_USERNAME";
-const REPO_NAME  = "YOUR_REPO_NAME";
+/* === اضبط هذه المتغيرات — مُحدَّثة لمشروعك === */
+const REPO_OWNER = "Yassinehmd67";
+const REPO_NAME  = "civic-complaints";
 const API_BASE   = "https://api.github.com";
-const FN_BASE    = "https://YOUR_NETLIFY_SITE.netlify.app/.netlify/functions";
+const FN_BASE    = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
 
-/* تبويب النماذج */
+/* التحكم بالتبويبات */
 const tabs = document.querySelectorAll(".tab-btn");
 tabs.forEach(btn=>btn.onclick=()=>{
   tabs.forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
-  document.getElementById("complaintTab").style.display = btn.dataset.tab==="complaintTab" ? "" : "none";
-  document.getElementById("reportTab").style.display = btn.dataset.tab==="reportTab" ? "" : "none";
+  ["complaintTab","reportTab","complaintsListTab","reportsListTab"].forEach(id=>{
+    document.getElementById(id).style.display = (btn.dataset.tab===id) ? "" : "none";
+  });
+  if(btn.dataset.tab==="complaintsListTab") renderComplaints();
+  if(btn.dataset.tab==="reportsListTab") renderReports();
 });
-document.getElementById("toComplaints").onclick = ()=>tabs[0].click();
-document.getElementById("toReports").onclick   = ()=>tabs[1].click();
-document.getElementById("addQuick").onclick    = ()=>tabs[0].click();
+document.getElementById("toComplaints").onclick = ()=>document.querySelector('.tab-btn[data-tab="complaintTab"]').click();
+document.getElementById("toReports").onclick   = ()=>document.querySelector('.tab-btn[data-tab="reportTab"]').click();
 
 /* Helpers */
 function labelValue(labels, prefix){
@@ -195,103 +185,155 @@ function labelValue(labels, prefix){
   });
   return l ? (l.name||l).split(":")[1].trim() : "";
 }
-function cardFor(issue){
+function summaryFromBody(body=""){
+  const line = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
+  return line.replace("**ملخص**:","").trim();
+}
+function cardFor(issue, type){
   const labels = issue.labels || [];
-  const type = labelValue(labels, "type:");
   const topic = labelValue(labels, "topic:");
   const city  = labelValue(labels, "city:");
   const created = new Date(issue.created_at);
-  const supporters = issue.comments || 0;
   const url = issue.html_url;
+  const number = issue.number;
+  const commentsCount = issue.comments || 0;
+  const likes = (issue.reactions && typeof issue.reactions["+1"]==="number") ? issue.reactions["+1"] : (issue.reactions?.total_count || 0);
 
-  // بالنسبة للشكايات ننشر الملخص فقط (موجود داخل body كنص مختصر)
   const body = (issue.body||"");
-  const summary = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
-  const summaryText = summary.replace("**ملخص**:","").trim();
-
-  // التقارير تعرض نصًا كاملاً (قصّه لبطاقة العرض فقط)
-  const excerpt = (body||"").replace(/\r?\n/g," ").slice(0,240) + ((body||"").length>240?"…":"");
-
-  const title = (issue.title||"ملف");
-  const badgeType = type==="complaint" ? "شكوى (ملخص)" : type==="report" ? "تقرير" : "ملف";
-  const content = (type==="complaint") ? summaryText : excerpt;
+  const summaryText = summaryFromBody(body);
+  const excerpt = body.replace(/\r?\n/g," ").slice(0,240) + (body.length>240?"…":"");
+  const content = (type==="complaint") ? (summaryText || "—") : excerpt;
+  const badgeType = (type==="complaint") ? "شكوى (ملخص)" : "تقرير";
 
   return `
-  <article class="card">
+  <article class="card" id="card-${number}">
     <div class="row">
       <span class="badge">${badgeType}</span>
       ${topic?`<span class="badge">موضوع: ${topic}</span>`:""}
       ${city?`<span class="badge">المكان: ${city}</span>`:""}
-      <span class="badge">#${issue.number}</span>
+      <span class="badge">#${number}</span>
     </div>
-    <h3 style="margin:6px 0 0"><a href="${url}" target="_blank" rel="noopener">${title}</a></h3>
-    <div class="muted">${created.toLocaleDateString()} • مؤيدون: ${supporters}</div>
-    <p>${content || "—"}</p>
-    <div class="row">
+    <h3 style="margin:6px 0 0"><a href="${url}" target="_blank" rel="noopener">${issue.title||"ملف"}</a></h3>
+    <div class="muted">${created.toLocaleDateString()} • تعليقات: <span id="c-${number}">${commentsCount}</span> • إعجابات: <span id="l-${number}">${likes}</span></div>
+    <p>${content}</p>
+
+    <div class="actions">
+      <button class="pill" onclick="upvote(${number})">ضمّ صوتي (إعجاب)</button>
       <a class="pill" href="${url}" target="_blank" rel="noopener">فتح على GitHub</a>
-      <a class="pill" href="${url}#new_comment_field" target="_blank" rel="noopener">أضف شهادة/تعليق</a>
-      <button class="pill" onclick="copyShare('${location.origin}${location.pathname}?ref=${issue.number}')">نسخ رابط المشاركة</button>
+      <a class="pill" href="${url}#new_comment_field" target="_blank" rel="noopener">فتح التعليقات</a>
     </div>
+
+    <details style="margin-top:8px">
+      <summary>أضف شهادة/تعليق</summary>
+      <form class="comment-form" data-issue="${number}" style="margin-top:8px">
+        <label>الاسم الكامل</label>
+        <input name="fullName" required />
+        <label>التعليق/الشهادة</label>
+        <textarea name="comment" rows="4" required></textarea>
+        <div class="row">
+          <button type="submit" class="btn">إرسال التعليق</button>
+          <span class="muted status"></span>
+        </div>
+      </form>
+    </details>
   </article>`;
 }
-function copyShare(t){ navigator.clipboard.writeText(t).then(()=>alert("تم نسخ الرابط")); }
 
-/* جلب المعروض للعامة (approved) */
+/* جلب العناصر approved */
 async function fetchApproved(page=1, acc=[]){
   const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues?state=open&labels=approved&per_page=100&page=${page}`;
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" }});
   if(!res.ok) throw new Error("GitHub API error");
   const batch = (await res.json()).filter(i=>!i.pull_request);
   acc.push(...batch);
   if(batch.length===100) return fetchApproved(page+1, acc);
   return acc;
 }
-function applyFilters(items){
-  const t = document.getElementById("typeFilter").value;
-  const topic = document.getElementById("topicFilter").value;
-  const city  = document.getElementById("cityFilter").value.trim();
-  const sort  = document.getElementById("sortBy").value;
 
-  let r = items.slice();
-  if(t){
-    r = r.filter(it => labelValue(it.labels,"type:") === t);
-  }
-  if(topic){
-    r = r.filter(it => labelValue(it.labels,"topic:") === topic);
-  }
-  if(city){
-    const cityOf = it => labelValue(it.labels,"city:");
-    r = r.filter(it => cityOf(it).toLowerCase().includes(city.toLowerCase()));
-  }
-  if(sort==="supporters"){
-    r.sort((a,b)=>(b.comments||0)-(a.comments||0));
-  }else{
-    r.sort((a,b)=> new Date(b.created_at)-new Date(a.created_at));
-  }
-  return r;
-}
-async function renderList(){
-  const list = document.getElementById("list");
-  const stats = document.getElementById("stats");
+/* عرض الشكايات فقط */
+async function renderComplaints(){
+  const list = document.getElementById("complaintsList");
+  const stats = document.getElementById("complaintsStats");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
   try{
     const items = await fetchApproved();
-    const filtered = applyFilters(items);
-    stats.innerHTML = `
-      <span class="badge">إجمالي الملفات: ${items.length}</span>
-      <span class="badge">المعروضة: ${filtered.length}</span>`;
-    list.innerHTML = filtered.map(cardFor).join("") || "<p class='muted'>لا توجد عناصر بعد.</p>";
-
-    // افتح التعليق مباشرة لو ref موجود
-    const params = new URLSearchParams(location.search);
-    const ref = params.get("ref");
-    if(ref) window.open(`https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/${ref}#new_comment_field`,"_blank");
+    const onlyComplaints = items.filter(it => labelValue(it.labels,"type:")==="complaint");
+    stats.innerHTML = `<span class="badge">الشكايات: ${onlyComplaints.length}</span>`;
+    list.innerHTML = onlyComplaints.map(it=>cardFor(it,"complaint")).join("") || "<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
+    bindCommentForms(list);
   }catch(e){
-    list.innerHTML = "<p class='muted'>تعذّر تحميل المعروض.</p>";
+    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
     console.error(e);
   }
 }
-document.getElementById("applyFilters").onclick = renderList;
+
+/* عرض التقارير فقط */
+async function renderReports(){
+  const list = document.getElementById("reportsList");
+  const stats = document.getElementById("reportsStats");
+  list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
+  try{
+    const items = await fetchApproved();
+    const onlyReports = items.filter(it => labelValue(it.labels,"type:")==="report");
+    stats.innerHTML = `<span class="badge">التقارير: ${onlyReports.length}</span>`;
+    list.innerHTML = onlyReports.map(it=>cardFor(it,"report")).join("") || "<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
+    bindCommentForms(list);
+  }catch(e){
+    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
+    console.error(e);
+  }
+}
+
+/* ربط نماذج التعليقات ديناميكيًا */
+function bindCommentForms(scope=document){
+  scope.querySelectorAll(".comment-form").forEach(form=>{
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = {
+        issueNumber: Number(form.dataset.issue),
+        fullName: fd.get("fullName"),
+        comment: fd.get("comment")
+      };
+      const status = form.querySelector(".status");
+      status.textContent = "جارٍ الإرسال…";
+      const r = await fetch(`${FN_BASE}/submitComment`, {
+        method:"POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
+      if(r.ok){
+        form.reset();
+        // زيادة رقم التعليقات ظاهريًا
+        const c = document.getElementById(`c-${payload.issueNumber}`);
+        if(c) c.textContent = String(Number(c.textContent||"0")+1);
+      }
+    });
+  });
+}
+
+/* زر الإعجاب */
+async function upvote(issueNumber){
+  const btn = document.querySelector(`#card-${issueNumber} button`);
+  btn.disabled = true;
+  try{
+    const r = await fetch(`${FN_BASE}/upvoteIssue`, {
+      method:"POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ issueNumber })
+    });
+    if(r.ok){
+      const l = document.getElementById(`l-${issueNumber}`);
+      if(l) l.textContent = String(Number(l.textContent||"0")+1);
+      alert("تم ضمّ صوتك. شكرًا!");
+    }else{
+      alert("تعذّر تسجيل الإعجاب الآن.");
+    }
+  }catch(e){
+    alert("تعذّر تسجيل الإعجاب.");
+  }finally{
+    btn.disabled = false;
+  }
+}
 
 /* إرسال الشكوى (مع رفع مرفق إلزامي) */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
@@ -317,9 +359,8 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     return;
   }
   const upJson = await upRes.json();
-  const proofUrl = upJson.url || ""; // موقّت/خاص
+  const proofUrl = upJson.url || "";
 
-  // إرسال الشكوى
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -334,7 +375,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     body: JSON.stringify(payload)
   });
   status.textContent = r.ok ? "تم استلام الشكوى للمراجعة." : "تعذّر إرسال الشكوى.";
-  if(r.ok){ form.reset(); renderList(); }
+  if(r.ok){ form.reset(); }
 });
 
 /* إرسال التقرير */
@@ -360,11 +401,18 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
     body: JSON.stringify(payload)
   });
   status.textContent = r.ok ? "تم استلام التقرير للمراجعة." : "تعذّر إرسال التقرير.";
-  if(r.ok){ form.reset(); renderList(); }
+  if(r.ok){ form.reset(); }
 });
 
-/* بدء العرض */
-renderList();
+/* فتح تبويب القوائم مباشرة إذا وُجد ref للتعليق */
+(function init(){
+  const params = new URLSearchParams(location.search);
+  const ref = params.get("ref");
+  if(ref){
+    document.querySelector('.tab-btn[data-tab="complaintsListTab"]').click();
+    window.open(`https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/${ref}#new_comment_field`,"_blank");
+  }
+})();
 </script>
 </body>
 </html>
