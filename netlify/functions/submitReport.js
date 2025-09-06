@@ -6,14 +6,15 @@ function cors(res) {
     ...res,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type"
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST,OPTIONS"
     }
   };
 }
 
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
-  if (event.httpMethod !== "POST")  return cors({ statusCode: 405, body: "Method Not Allowed" });
+  if (event.httpMethod !== "POST")    return cors({ statusCode: 405, body: "Method Not Allowed" });
 
   const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN } = process.env;
   if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
@@ -21,15 +22,37 @@ export async function handler(event) {
   }
 
   try {
-    const p = JSON.parse(event.body || "{}");
+    const p0 = JSON.parse(event.body || "{}");
+
+    // تنظيف الحقول
+    const p = {
+      fullName: (p0.fullName || "").trim(),
+      eventDateTime: (p0.eventDateTime || "").trim(),
+      place: (p0.place || "").trim(),
+      category: (p0.category || "").trim(),
+      body: (p0.body || "").trim(),
+      evidenceUrl: (p0.evidenceUrl || "").trim()
+    };
+
     const errs = [];
     if (!p.eventDateTime) errs.push("تاريخ/وقت الواقعة مطلوب.");
-    if (!p.place)        errs.push("المكان مطلوب.");
-    if (!p.category)     errs.push("التصنيف مطلوب.");
-    if (!p.body || p.body.trim().length < 120) errs.push("نص التقرير قصير (≥ 120 حرفًا).");
+    if (!p.place)         errs.push("المكان مطلوب.");
+    if (!p.category)      errs.push("التصنيف مطلوب.");
+    if (!p.body || p.body.length < 120) errs.push("نص التقرير قصير (≥ 120 حرفًا).");
     if (errs.length) return cors({ statusCode: 422, body: errs.join(" ") });
 
-    const title = `[${p.category}] تقرير — ${p.place} — ${p.eventDateTime}`;
+    // دعم عدة روابط أدلة مفصولة بفواصل
+    let evidenceBlock = "";
+    if (p.evidenceUrl) {
+      const links = p.evidenceUrl.split(",").map(s => s.trim()).filter(Boolean);
+      if (links.length === 1) {
+        evidenceBlock = `**روابط أدلة:** ${links[0]}`;
+      } else if (links.length > 1) {
+        evidenceBlock = `**روابط أدلة:**\n${links.map(u => `- ${u}`).join("\n")}`;
+      }
+    }
+
+    const title = `تقرير: [${p.category}] — ${p.place} — ${p.eventDateTime}`;
     const md = [
       `**النوع:** تقرير`,
       p.fullName ? `**مبلِّغ:** ${p.fullName}` : "",
@@ -38,10 +61,11 @@ export async function handler(event) {
       "",
       p.body,
       "",
-      p.evidenceUrl ? `**روابط أدلة:** ${p.evidenceUrl}` : ""
+      evidenceBlock
     ].filter(Boolean).join("\n");
 
-    const labels = ["pending", "type: report", `topic: ${p.category}`, `city: ${p.place}`];
+    const labels = ["pending", "type: report", `topic: ${p.category}`];
+    if (p.place) labels.push(`city: ${p.place}`);
 
     const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`, {
       method: "POST",
@@ -63,6 +87,7 @@ export async function handler(event) {
       statusCode: 200,
       body: JSON.stringify({ number: issue.number, html_url: issue.html_url })
     });
+
   } catch (e) {
     return cors({ statusCode: 500, body: String(e.message || e) });
   }

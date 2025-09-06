@@ -6,7 +6,8 @@ function cors(res) {
     ...res,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type"
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST,OPTIONS"
     }
   };
 }
@@ -31,7 +32,7 @@ export async function handler(event) {
     if (errs.length) return cors({ statusCode: 422, body: errs.join(" ") });
 
     const showName = payload.showName === "yes";
-    const title = `[${payload.category}] ${showName ? payload.fullName : "اسم محفوظ"} — ${payload.submittedDate}`;
+    const title = `شكوى: [${payload.category}] ${showName ? payload.fullName : "اسم محفوظ"} — ${payload.submittedDate}`;
     const body = [
       `**النوع:** شكوى`,
       `**الاسم الكامل (للإدارة):** ${payload.fullName}`,
