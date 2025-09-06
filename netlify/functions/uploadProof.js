@@ -20,7 +20,6 @@ export const handler = async (event) => {
       };
     }
 
-    // Netlify يسلّم الجسم base64 عند multipart
     const contentType = event.headers["content-type"] || event.headers["Content-Type"];
     if (!contentType || !contentType.includes("multipart/form-data")) {
       return { statusCode: 400, body: "Content-Type must be multipart/form-data" };
@@ -28,6 +27,7 @@ export const handler = async (event) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
+    // Netlify يسلّم الجسم base64 عند multipart
     const buffer = Buffer.from(event.body || "", "base64");
     const busboy = Busboy({ headers: { "content-type": contentType } });
 
@@ -70,7 +70,7 @@ export const handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "لم يتم استلام ملف" }) };
     }
 
-    // الامتداد حسب الـ mime
+    // الامتداد حسب mime
     const ext = fileMime === "application/pdf" ? "pdf" : fileMime === "image/png" ? "png" : "jpg";
     const objectName = `proofs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
@@ -87,7 +87,7 @@ export const handler = async (event) => {
       return { statusCode: 500, body: JSON.stringify({ error: uploadError.message }) };
     }
 
-    // لا نعرض رابطًا عامًا دائمًا. نُعيد مسارًا داخليًا + رابطًا موقّتًا (ساعة) إن أردت.
+    // رابط موقّت (ساعة) للاستخدام الداخلي عند الحاجة
     const { data: signed } = await supabase
       .storage
       .from(SUPABASE_BUCKET)
@@ -97,7 +97,7 @@ export const handler = async (event) => {
       statusCode: 200,
       body: JSON.stringify({
         path: objectName,
-        url: signed?.signedUrl || null, // يستخدم للعرض المؤقت إن احتجت
+        url: signed?.signedUrl || null,
       }),
       headers: { "Content-Type": "application/json" }
     };
