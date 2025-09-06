@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>لوحة الإدارة</title>
+  <style>
+    body{font-family:system-ui,Arial;max-width:820px;margin:24px auto;padding:0 12px;line-height:1.8}
+    .card{border:1px solid #e6e6e6;border-radius:14px;padding:16px;margin:14px 0;background:#fff}
+    label{display:block;margin:8px 0 4px}
+    input,select,button{padding:10px;border:1px solid #ccc;border-radius:10px;font-size:1rem}
+    input,select{width:100%}
+    button{background:#111;color:#fff;cursor:pointer;border-radius:10px}
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+    .muted{color:#666}
+    .success{color:green}
+    .error{color:red}
+    .badge{display:inline-block;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:999px;padding:2px 10px;font-size:.85em;margin-inline:4px 0}
+  </style>
+</head>
+<body>
+  <h1>لوحة الإدارة</h1>
+  <p class="muted">لتغيير حالة الشكايات/التقارير. التحقق يتم على الخادم عبر <b>Bcrypt</b> باستخدام <code>ADMIN_HASH</code> المخزن في متغيرات بيئة Netlify.</p>
+
+  <div class="card">
+    <label>رقم الملف (Issue Number)</label>
+    <input id="issueNumber" type="number" placeholder="مثال: 123" />
+
+    <div class="row">
+      <button id="checkBtn">استعلام الحالة الحالية</button>
+      <span id="checkStatus" class="muted"></span>
+    </div>
+
+    <div id="currentBox" class="card" style="display:none;margin-top:10px">
+      <div class="row" id="currentBadges"></div>
+      <h3 id="currentTitle" style="margin:6px 0 0"></h3>
+      <div id="currentMeta" class="muted"></div>
+      <p id="currentExcerpt"></p>
+      <div class="row"><a id="currentLink" class="badge" href="#" target="_blank" rel="noopener">فتح الملف على GitHub</a></div>
+    </div>
+
+    <hr style="border:none;height:1px;background:#eee;margin:14px 0">
+
+    <label>الحالة الجديدة</label>
+    <select id="newStatus">
+      <option value="approved">مقبول/منشور</option>
+      <option value="rejected">مرفوض</option>
+      <option value="pending">قيد الاستلام</option>
+      <option value="under-review">قيد المراجعة</option>
+      <option value="needs-more-info">بحاجة لتوضيح</option>
+    </select>
+
+    <label>كلمة السر</label>
+    <input id="adminPassword" type="password" placeholder="••••••••" />
+
+    <div class="row">
+      <button id="applyBtn">تطبيق الحالة</button>
+      <span id="status" class="muted"></span>
+    </div>
+  </div>
+
+<script>
+/* === عدّل الرابط لاسم موقعك إن تغيّر === */
+const FN_BASE = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+
+/* خريطة عرض الحالة برموز واضحة */
+function prettyStatus(labels){
+  const names = (labels||[]).map(l=>l.name||l);
+  const has = n => names.includes(n);
+  if(has("approved")) return "✅ مقبول/منشور";
+  if(has("rejected")) return "❌ مرفوض";
+  if(has("needs-more-info")) return "ℹ️ بحاجة لتوضيح";
+  if(has("under-review")) return "🔎 قيد المراجعة";
+  if(has("pending")) return "⌛ قيد الاستلام";
+  return "— غير محدد —";
+}
+
+/* زر: استعلام الحالة الحالية */
+document.getElementById("checkBtn").addEventListener("click", async ()=>{
+  const number = Number(document.getElementById("issueNumber").value);
+  const info = document.getElementById("checkStatus");
+  const box  = document.getElementById("currentBox");
+  if(!number){ info.textContent = "❗ أدخل رقم ملف صالح."; info.className="error"; box.style.display="none"; return; }
+  info.textContent = "⏳ جارٍ الاستعلام…"; info.className = "muted";
+  box.style.display = "none";
+
+  try{
+    const r = await fetch(`${FN_BASE}/getStatus?number=${number}`);
+    const txt = await r.text();
+    if(!r.ok){ info.textContent = "❌ فشل: " + txt; info.className="error"; return; }
+    const d = JSON.parse(txt);
+
+    // تعبئة الواجهة
+    const badges = [];
+    badges.push(`<span class="badge">#${d.number}</span>`);
+    badges.push(`<span class="badge">${d.type==="complaint"?"شكوى":"تقرير"}</span>`);
+    if(d.topic) badges.push(`<span class="badge">موضوع: ${d.topic}</span>`);
+    if(d.city)  badges.push(`<span class="badge">المكان: ${d.city}</span>`);
+    document.getElementById("currentBadges").innerHTML = badges.join("");
+
+    document.getElementById("currentTitle").textContent = d.title || "—";
+    document.getElementById("currentMeta").innerHTML = `${new Date(d.created_at).toLocaleDateString()} • الحالة: <b>${prettyStatus(d.labels)}</b>`;
+    document.getElementById("currentExcerpt").textContent = (d.display||"").slice(0,280);
+    const link = document.getElementById("currentLink");
+    link.href = d.html_url || "#";
+
+    box.style.display = "";
+    info.textContent = "✅ تم الاستعلام."; info.className="success";
+  }catch(e){
+    info.textContent = "⚠️ خطأ في الشبكة."; info.className="error";
+  }
+});
+
+/* زر: تطبيق الحالة الجديدة */
+document.getElementById("applyBtn").addEventListener("click", async ()=>{
+  const number = Number(document.getElementById("issueNumber").value);
+  const state  = document.getElementById("newStatus").value;
+  const pass   = document.getElementById("adminPassword").value;
+  const status = document.getElementById("status");
+
+  if(!number || !state || !pass){ status.textContent="❗ أكمل الحقول."; status.className="error"; return; }
+  status.textContent="⏳ جارٍ التنفيذ…"; status.className="muted";
+
+  try{
+    const r = await fetch(`${FN_BASE}/adminSetStatus`, {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ number, state, password: pass })
+    });
+    const t = await r.text();
+    if(!r.ok){ status.textContent = "❌ فشل: " + t; status.className="error"; return; }
+
+    status.textContent = "✅ تم التحديث بنجاح."; status.className="success";
+    document.getElementById("adminPassword").value="";
+
+    // تحديث صندوق الحالة الحالية مباشرة بعد التغيير
+    document.getElementById("checkBtn").click();
+  }catch(e){
+    status.textContent = "⚠️ خطأ في الشبكة."; status.className="error";
+  }
+});
+</script>
+</body>
+</html>

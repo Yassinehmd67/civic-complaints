@@ -2,7 +2,13 @@
 export const config = { path: "/.netlify/functions/submitReport" };
 
 function cors(res) {
-  return { ...res, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
+  return {
+    ...res,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  };
 }
 
 export async function handler(event) {
@@ -51,7 +57,12 @@ export async function handler(event) {
       const t = await res.text();
       return cors({ statusCode: 500, body: `GitHub error: ${t}` });
     }
-    return cors({ statusCode: 200, body: "OK" });
+
+    const issue = await res.json();
+    return cors({
+      statusCode: 200,
+      body: JSON.stringify({ number: issue.number, html_url: issue.html_url })
+    });
   } catch (e) {
     return cors({ statusCode: 500, body: String(e.message || e) });
   }

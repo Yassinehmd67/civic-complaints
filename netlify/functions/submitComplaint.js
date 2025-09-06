@@ -2,7 +2,13 @@
 export const config = { path: "/.netlify/functions/submitComplaint" };
 
 function cors(res) {
-  return { ...res, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
+  return {
+    ...res,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  };
 }
 
 export async function handler(event) {
@@ -38,7 +44,6 @@ export async function handler(event) {
       `> *تُنشر الشكايات بملخص فقط، والوثائق محفوظة لدى الإدارة.*`
     ].filter(Boolean).join("\n");
 
-    // وسوم
     const labels = ["pending", "type: complaint", `topic: ${payload.category}`];
     if (payload.place) labels.push(`city: ${payload.place}`);
 
@@ -57,7 +62,11 @@ export async function handler(event) {
       return cors({ statusCode: 500, body: `GitHub error: ${t}` });
     }
 
-    return cors({ statusCode: 200, body: "OK" });
+    const issue = await res.json();
+    return cors({
+      statusCode: 200,
+      body: JSON.stringify({ number: issue.number, html_url: issue.html_url })
+    });
   } catch (e) {
     return cors({ statusCode: 500, body: String(e.message || e) });
   }
