@@ -9,7 +9,6 @@
     :root { --gap: 14px; }
     body{font-family:system-ui,Arial;max-width:1100px;margin:24px auto;padding:0 12px;line-height:1.8;background:#fff}
     header{display:flex;flex-wrap:wrap;gap:var(--gap);align-items:center;justify-content:space-between;margin-bottom:10px}
-    h1{margin:0}
     .muted{color:#666;font-size:.92em}
     .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
     .btn{padding:10px 14px;border:0;border-radius:12px;background:#111;color:#fff;cursor:pointer}
@@ -30,12 +29,12 @@
     .sep{height:1px;background:#eee;margin:10px 0}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-    /* أزرار الهيدر */
+    /* أزرار الهيدر الصغيرة يسار */
     .nav-actions {
       display: flex;
       gap: 8px;
       margin-top: 8px;
-      margin-inline-start: auto;
+      margin-inline-start: auto; /* يدفع الأزرار لليسار في RTL */
     }
     .nav-btn {
       padding: 6px 12px;
@@ -48,25 +47,51 @@
       color: #111;
       transition: all 0.2s ease;
     }
-    .nav-btn:hover { background: #111; color:#fff; border-color:#111 }
-
-    /* مربعات العناوين */
-    .title-card, .section-title {
-      background:#f9f9f9;
-      border:1px solid #ddd;
-      border-radius:12px;
-      padding:16px 20px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.08);
-      margin-bottom:14px;
-      text-align:center;
+    .nav-btn:hover {
+      background: #111;
+      color: #fff;
+      border-color: #111;
     }
-    .title-card h1, .section-title h2 {
-      margin:0;
-      color:#0a0a0a;
-    }
-    .title-card .muted { font-size:0.92rem; color:#555 }
 
-    /* أيقونة تلجرام */
+    /* العنوان الرئيسي في الوسط داخل بطاقة أنيقة */
+    .title-card {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      margin: 0 auto 12px;
+      text-align: center;
+      width: 100%;
+    }
+    .title-card h1 {
+      margin: 0 0 6px;
+      font-size: 1.8rem;
+      color: #0a0a0a;
+    }
+    .title-card .muted {
+      text-align: center;
+      font-size: 0.92rem;
+      color: #555;
+    }
+
+    /* العناوين الفرعية موحدة (يمين وبنفس المستوى) */
+    .section-title {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+      text-align: right; /* توحيد المحاذاة لليمين */
+    }
+    .section-title h2 {
+      margin: 0;
+      font-size: 1.4rem;
+      color: #0a0a0a;
+    }
+
+    /* أيقونة تيلجرام العائمة + نبض */
     .telegram-fab {
       position: fixed;
       bottom: 20px;
@@ -82,7 +107,7 @@
       animation: pulse 1.5s infinite;
       z-index: 999;
     }
-    .telegram-fab:hover { background:#006fa1 }
+    .telegram-fab:hover { background: #006fa1 }
     @keyframes pulse {
       0% { transform: scale(1); }
       50% { transform: scale(1.1); }
@@ -91,7 +116,6 @@
   </style>
 </head>
 <body>
-
 <header>
   <div class="title-card">
     <h1>منصة الشكايات والتقارير</h1>
@@ -107,71 +131,425 @@
   </nav>
 </header>
 
-<!-- تبويبات -->
-<section class="tabs">
-  <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
-  <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
-  <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
-  <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
-  <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
-</section>
+  <!-- تبويبات -->
+  <section class="tabs">
+    <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
+    <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
+    <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
+    <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
+    <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
+  </section>
 
-<!-- تبويب تتبع الحالة -->
-<section id="statusTab" class="card" style="display:none">
-  <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
-  <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
-  <div class="row">
-    <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
-    <button id="trackBtn" class="btn">استعلام</button>
-  </div>
-  <div id="trackResult" style="margin-top:12px"></div>
-</section>
+  <!-- تبويب تتبع الحالة -->
+  <section id="statusTab" class="card" style="display:none">
+    <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
+    <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
+    <div class="row">
+      <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
+      <button id="trackBtn" class="btn">استعلام</button>
+    </div>
+    <div id="trackResult" style="margin-top:12px"></div>
+  </section>
 
-<!-- نموذج الشكوى -->
-<section id="complaintTab" class="card">
-  <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
-  <p class="muted">لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.</p>
-  <form id="complaintForm">
-    <!-- باقي الحقول هنا -->
-  </form>
-</section>
+  <!-- نموذج الشكوى -->
+  <section id="complaintTab" class="card">
+    <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
+    <p class="muted">لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.</p>
+    <form id="complaintForm">
+      <label>الاسم الكامل</label>
+      <input name="fullName" required placeholder="الاسم كما في البطاقة" />
+      <label>إظهار الاسم للعموم؟</label>
+      <select name="showName" required>
+        <option value="yes">نعم، اعرض اسمي</option>
+        <option value="no">لا، أخفِ اسمي</option>
+      </select>
+      <label>تاريخ تقديم الشكوى</label>
+      <input type="date" name="submittedDate" required />
+      <label>نوع الشكوى</label>
+      <select name="category" required>
+        <option value="">— اختر —</option>
+        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+      </select>
+      <label>المدينة/المكان (اختياري)</label>
+      <input name="place" placeholder="مثال: فاس - مسجد ..." />
+      <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
+      <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
+      <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
+      <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
+      <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
+      <div class="row">
+        <button type="submit" class="btn">إرسال الشكوى</button>
+        <span id="complaintStatus" class="muted"></span>
+      </div>
+    </form>
+  </section>
 
-<!-- نموذج التقرير -->
-<section id="reportTab" class="card" style="display:none">
-  <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
-  <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
-  <form id="reportForm">
-    <!-- باقي الحقول هنا -->
-  </form>
-</section>
+  <!-- نموذج التقرير -->
+  <section id="reportTab" class="card" style="display:none">
+    <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
+    <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
+    <form id="reportForm">
+      <label>الاسم الكامل (اختياري للعرض العلني)</label>
+      <input name="fullName" placeholder="يمكن تركه فارغًا إن رغبت" />
+      <label>تاريخ/وقت الواقعة</label>
+      <input type="datetime-local" name="eventDateTime" required />
+      <label>المكان</label>
+      <input name="place" required placeholder="مسجد/حي/عنوان" />
+      <label>التصنيف</label>
+      <select name="category" required>
+        <option value="">— اختر —</option>
+        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+      </select>
+      <label>نص التقرير (≥ 120 حرفًا)</label>
+      <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
+      <label>روابط أدلة (اختياري)</label>
+      <input name="evidenceUrl" type="url" placeholder="https://..." />
+      <div class="row">
+        <button type="submit" class="btn">إرسال التقرير</button>
+        <span id="reportStatus" class="muted"></span>
+      </div>
+    </form>
+  </section>
 
-<!-- تبويب الشكايات المنشورة -->
-<section id="complaintsListTab" class="card" style="display:none">
-  <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
-  <div id="complaintsList" class="grid" aria-live="polite"></div>
-</section>
+  <!-- تبويب الشكايات المنشورة -->
+  <section id="complaintsListTab" class="card" style="display:none">
+    <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
+    <div id="complaintsList" class="grid" aria-live="polite"></div>
+  </section>
 
-<!-- تبويب التقارير المنشورة -->
-<section id="reportsListTab" class="card" style="display:none">
-  <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
-  <div id="reportsList" class="grid" aria-live="polite"></div>
-</section>
+  <!-- تبويب التقارير المنشورة -->
+  <section id="reportsListTab" class="card" style="display:none">
+    <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
+    <div id="reportsList" class="grid" aria-live="polite"></div>
+  </section>
 
-<div class="sep"></div>
-<footer class="muted">
-  <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
-</footer>
+  <div class="sep"></div>
+  <footer class="muted">
+    <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
+  </footer>
 
-<!-- زر تيلجرام -->
+<!-- أيقونة تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
     <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
   </svg>
 </a>
 
 <script>
-/* هنا تبقى نفس الأكواد JS التي أرسلتها لك سابقًا */
-</script>
+/* إعدادات مشروعك */
+const REPO_OWNER = "Yassinehmd67";
+const REPO_NAME  = "civic-complaints";
+const API_BASE   = "https://api.github.com";
+const FN_BASE    = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
 
+/* التنقل بين التبويبات */
+const tabs = document.querySelectorAll(".tab-btn");
+tabs.forEach(btn=>btn.onclick=()=>{
+  tabs.forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  ["complaintTab","reportTab","complaintsListTab","reportsListTab","statusTab"].forEach(id=>{
+    document.getElementById(id).style.display = (btn.dataset.tab===id) ? "" : "none";
+  });
+  if(btn.dataset.tab==="complaintsListTab") renderComplaints();
+  if(btn.dataset.tab==="reportsListTab") renderReports();
+});
+document.getElementById("toComplaints").onclick = ()=>document.querySelector('.tab-btn[data-tab="complaintTab"]').click();
+document.getElementById("toReports").onclick   = ()=>document.querySelector('.tab-btn[data-tab="reportTab"]').click();
+
+/* أدوات مساعدة */
+function labelValue(labels, prefix){
+  const l = (labels||[]).find(x=>{
+    const n = (x.name||x).toString();
+    return n.startsWith(prefix);
+  });
+  return l ? (l.name||l).split(":")[1].trim() : "";
+}
+function summaryFromBody(body=""){
+  const line = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
+  return line.replace("**ملخص**:","").trim();
+}
+function statusLabel(labels){
+  const has = n => (labels||[]).some(l=>(l.name||"")===n);
+  if(has("approved")) return "✅ مقبول/منشور";
+  if(has("rejected")) return "❌ مرفوض";
+  if(has("needs-more-info")) return "ℹ️ بحاجة لتوضيح";
+  if(has("under-review")) return "🔎 قيد المراجعة";
+  if(has("pending")) return "⌛ قيد الاستلام";
+  return "— غير محدد —";
+}
+
+/* بطاقة عرض عنصر */
+function cardFor(issue, type){
+  const labels = issue.labels || [];
+  const topic = labelValue(labels, "topic:");
+  const city  = labelValue(labels, "city:");
+  const created = new Date(issue.created_at);
+  const url = issue.html_url;
+  const number = issue.number;
+  const commentsCount = issue.comments || 0;
+  const likes = (issue.reactions && typeof issue.reactions["+1"]==="number") ? issue.reactions["+1"] : (issue.reactions?.total_count || 0);
+
+  const body = (issue.body||"");
+  const summaryText = summaryFromBody(body);
+  const excerpt = body.replace(/\r?\n/g," ").slice(0,240) + (body.length>240?"…":"");
+  const content = (type==="complaint") ? (summaryText || "—") : excerpt;
+  const badgeType = (type==="complaint") ? "شكوى (ملخص)" : "تقرير";
+
+  return `
+  <article class="card" id="card-${number}">
+    <div class="row">
+      <span class="badge">${badgeType}</span>
+      ${topic?`<span class="badge">موضوع: ${topic}</span>`:""}
+      ${city?`<span class="badge">المكان: ${city}</span>`:""}
+      <span class="badge">#${number}</span>
+    </div>
+    <h3 style="margin:6px 0 0"><a href="${url}" target="_blank" rel="noopener">${issue.title||"ملف"}</a></h3>
+    <div class="muted">${created.toLocaleDateString()} • تعليقات: <span id="c-${number}">${commentsCount}</span> • إعجابات: <span id="l-${number}">${likes}</span></div>
+    <p>${content}</p>
+
+    <div class="actions">
+      <button class="pill" onclick="upvote(${number})">ضمّ صوتي (إعجاب)</button>
+      <a class="pill" href="${url}" target="_blank" rel="noopener">فتح على GitHub</a>
+      <a class="pill" href="${url}#new_comment_field" target="_blank" rel="noopener">فتح التعليقات</a>
+    </div>
+
+    <details style="margin-top:8px">
+      <summary>أضف شهادة/تعليق</summary>
+      <form class="comment-form" data-issue="${number}" style="margin-top:8px">
+        <label>الاسم الكامل</label>
+        <input name="fullName" required />
+        <label>التعليق/الشهادة</label>
+        <textarea name="comment" rows="4" required></textarea>
+        <div class="row">
+          <button type="submit" class="btn">إرسال التعليق</button>
+          <span class="muted status"></span>
+        </div>
+      </form>
+    </details>
+  </article>`;
+}
+
+/* جلب العناصر approved من GitHub */
+async function fetchApproved(page=1, acc=[]){
+  const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues?state=open&labels=approved&per_page=100&page=${page}`;
+  const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" }});
+  if(!res.ok) throw new Error("GitHub API error");
+  const batch = (await res.json()).filter(i=>!i.pull_request);
+  acc.push(...batch);
+  if(batch.length===100) return fetchApproved(page+1, acc);
+  return acc;
+}
+
+/* عرض الشكايات فقط */
+async function renderComplaints(){
+  const list = document.getElementById("complaintsList");
+  list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
+  try{
+    const items = await fetchApproved();
+    const onlyComplaints = items.filter(it => labelValue(it.labels,"type:")==="complaint");
+    list.innerHTML = onlyComplaints.map(it=>cardFor(it,"complaint")).join("") || "<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
+    bindCommentForms(list);
+  }catch(e){
+    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
+    console.error(e);
+  }
+}
+
+/* عرض التقارير فقط */
+async function renderReports(){
+  const list = document.getElementById("reportsList");
+  list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
+  try{
+    const items = await fetchApproved();
+    const onlyReports = items.filter(it => labelValue(it.labels,"type:")==="report");
+    list.innerHTML = onlyReports.map(it=>cardFor(it,"report")).join("") || "<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
+    bindCommentForms(list);
+  }catch(e){
+    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
+    console.error(e);
+  }
+}
+
+/* ربط نماذج التعليقات ديناميكيًا */
+function bindCommentForms(scope=document){
+  scope.querySelectorAll(".comment-form").forEach(form=>{
+    form.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const payload = {
+        issueNumber: Number(form.dataset.issue),
+        fullName: fd.get("fullName"),
+        comment: fd.get("comment")
+      };
+      const status = form.querySelector(".status");
+      status.textContent = "جارٍ الإرسال…";
+      const r = await fetch(`${FN_BASE}/submitComment`, {
+        method:"POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(payload)
+      });
+      status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
+      if(r.ok){
+        form.reset();
+        const c = document.getElementById(`c-${payload.issueNumber}`);
+        if(c) c.textContent = String(Number(c.textContent||"0")+1);
+      }
+    });
+  });
+}
+
+/* زر الإعجاب */
+async function upvote(issueNumber){
+  const btn = document.querySelector(`#card-${issueNumber} button`);
+  btn.disabled = true;
+  try{
+    const r = await fetch(`${FN_BASE}/upvoteIssue`, {
+      method:"POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ issueNumber })
+    });
+    if(r.ok){
+      const l = document.getElementById(`l-${issueNumber}`);
+      if(l) l.textContent = String(Number(l.textContent||"0")+1);
+      alert("تم ضمّ صوتك. شكرًا!");
+    }else{
+      alert("تعذّر تسجيل الإعجاب الآن.");
+    }
+  }catch(e){
+    alert("تعذّر تسجيل الإعجاب.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* إرسال الشكوى (مع رفع مرفق إلزامي) */
+document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+
+  const status = document.getElementById("complaintStatus");
+  status.textContent = "جارٍ الرفع والتحقق…";
+
+  // رفع الملف أولًا
+  const file = fd.get("proofFile");
+  if(!file || file.size===0){
+    status.textContent = "الملف الموقّع مطلوب.";
+    return;
+  }
+  const upFd = new FormData();
+  upFd.append("file", file, file.name);
+  const upRes = await fetch(`${FN_BASE}/uploadProof`, { method:"POST", body: upFd });
+  if(!upRes.ok){
+    status.textContent = "تعذّر رفع الملف. تحقّق من النوع/الحجم.";
+    return;
+  }
+  const upJson = await upRes.json();
+  const proofUrl = upJson.url || "";
+
+  const payload = {
+    fullName: fd.get("fullName"),
+    showName: fd.get("showName"),
+    submittedDate: fd.get("submittedDate"),
+    category: fd.get("category"),
+    place: fd.get("place"),
+    summary: fd.get("summary"),
+    proofUrl
+  };
+  const r = await fetch(`${FN_BASE}/submitComplaint`, {
+    method:"POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+
+  if(!r.ok){
+    status.textContent = "تعذّر إرسال الشكوى.";
+    return;
+  }
+
+  const data = await r.json(); // { number, html_url }
+  status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+  form.reset();
+
+  // افتح تبويب تتبع الحالة وجهّز الرقم
+  document.querySelector('.tab-btn[data-tab="statusTab"]').click();
+  const tn = document.getElementById("trackNumber");
+  if(tn){ tn.value = data.number; }
+});
+
+/* إرسال التقرير */
+document.getElementById("reportForm").addEventListener("submit", async (e)=>{
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+
+  const status = document.getElementById("reportStatus");
+  status.textContent = "جارٍ الإرسال…";
+
+  const payload = {
+    fullName: fd.get("fullName"),
+    eventDateTime: fd.get("eventDateTime"),
+    place: fd.get("place"),
+    category: fd.get("category"),
+    body: fd.get("body"),
+    evidenceUrl: fd.get("evidenceUrl")
+  };
+  const r = await fetch(`${FN_BASE}/submitReport`, {
+    method:"POST", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(payload)
+  });
+
+  if(!r.ok){
+    status.textContent = "تعذّر إرسال التقرير.";
+    return;
+  }
+
+  const data = await r.json(); // { number, html_url }
+  status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+  form.reset();
+
+  // افتح تبويب تتبع الحالة مع تعبئة الرقم
+  document.querySelector('.tab-btn[data-tab="statusTab"]').click();
+  const tn = document.getElementById("trackNumber");
+  if(tn){ tn.value = data.number; }
+});
+
+/* تتبع الحالة */
+document.getElementById("trackBtn").addEventListener("click", async ()=>{
+  const num = Number(document.getElementById("trackNumber").value);
+  const box = document.getElementById("trackResult");
+  if(!num){ box.innerHTML = "<p class='muted'>أدخل رقمًا صحيحًا.</p>"; return; }
+  box.innerHTML = "<p class='muted'>… جارٍ الاستعلام</p>";
+  try{
+    const r = await fetch(`${FN_BASE}/getStatus?number=${num}`);
+    if(!r.ok){ box.innerHTML = "<p class='muted'>تعذّر قراءة الحالة.</p>"; return; }
+    const d = await r.json();
+    box.innerHTML = `
+      <div class="card">
+        <div class="row">
+          <span class="badge">#${d.number}</span>
+          <span class="badge">${d.type==="complaint"?"شكوى":"تقرير"}</span>
+          ${d.topic?`<span class="badge">موضوع: ${d.topic}</span>`:""}
+          ${d.city?`<span class="badge">المكان: ${d.city}</span>`:""}
+        </div>
+        <h3 style="margin:6px 0 0">${d.title}</h3>
+        <div class="muted">${new Date(d.created_at).toLocaleDateString()} • الحالة: <b>${statusLabel(d.labels)}</b></div>
+        <p>${d.display}</p>
+        <div class="row">
+          <a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a>
+        </div>
+      </div>`;
+  }catch(e){
+    box.innerHTML = "<p class='muted'>حصل خطأ أثناء الاستعلام.</p>";
+  }
+});
+
+/* تحميل تبويب بالمراجع إن وُجد ref في الرابط */
+(function init(){
+  const params = new URLSearchParams(location.search);
+  const ref = params.get("ref");
+  if(ref){
+    document.querySelector('.tab-btn[data-tab="complaintsListTab"]').click();
+    window.open(`https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/${ref}#new_comment_field`,"_blank");
+  }
+})();
+</script>
 </body>
 </html>
