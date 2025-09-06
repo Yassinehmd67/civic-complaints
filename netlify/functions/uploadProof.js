@@ -4,20 +4,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_BUCKET } = process.env;
 
-// أنواع الملفات المسموحة وحجم 10MB
 const ALLOWED = new Set(["application/pdf", "image/png", "image/jpeg"]);
 const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
-export const handler = async (event) => {
+export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
       return { statusCode: 405, body: "Method Not Allowed" };
-    }
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: "Missing Supabase env vars" }),
-      };
     }
 
     const contentType = event.headers["content-type"] || event.headers["Content-Type"];
@@ -25,9 +18,34 @@ export const handler = async (event) => {
       return { statusCode: 400, body: "Content-Type must be multipart/form-data" };
     }
 
+    // طباعة تشخيصية (لن تظهر التوكن)
+    console.log("[ENVCHK]", {
+      SUPABASE_URL,
+      SUPABASE_BUCKET,
+      SERVICE_ROLE_PRESENT: Boolean(SUPABASE_SERVICE_ROLE)
+    });
+
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: "Missing Supabase env vars" })
+      };
+    }
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
-    // Netlify يسلّم الجسم base64 عند multipart
+    // فحص بسيط: listing رمزي للتأكد من الوصول للستوريج
+    try {
+      const test = await supabase.storage.from(SUPABASE_BUCKET).list("", { limit: 1 });
+      if (test.error) {
+        console.error("[STORAGE LIST ERROR]", test.error);
+      } else {
+        console.log("[STORAGE LIST OK]");
+      }
+    } catch (e) {
+      console.error("[STORAGE LIST EXCEPTION]", e);
+    }
+
     const buffer = Buffer.from(event.body || "", "base64");
     const busboy = Busboy({ headers: { "content-type": contentType } });
 
@@ -42,7 +60,7 @@ export const handler = async (event) => {
         fileMime = info.mimeType || "application/octet-stream";
 
         if (!ALLOWED.has(fileMime)) {
-          reject(new Error("نوع الملف غير مسموح. المسموح: PDF/PNG/JPG"));
+          reject(new Error("نوع الملف غير مسموح (PDF/PNG/JPG)"));
           return;
         }
 
@@ -55,12 +73,12 @@ export const handler = async (event) => {
           fileBuffer = Buffer.concat([fileBuffer, data]);
         });
 
-        file.on("limit", () => reject(new Error("تجاوز الحد الأقصى")));
         file.on("end", () => resolve());
+        file.on("error", (err) => reject(err));
       });
 
-      busboy.on("error", reject);
       busboy.on("finish", resolve);
+      busboy.on("error", (err) => reject(err));
     });
 
     busboy.end(buffer);
@@ -70,38 +88,64 @@ export const handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: "لم يتم استلام ملف" }) };
     }
 
-    // الامتداد حسب mime
     const ext = fileMime === "application/pdf" ? "pdf" : fileMime === "image/png" ? "png" : "jpg";
-    const objectName = `proofs/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    // رفع الملف إلى Supabase Storage (bucket يجب أن يكون موجودًا ومسمى في SUPABASE_BUCKET)
-    const { error: uploadError } = await supabase
-      .storage
-      .from(SUPABASE_BUCKET)
-      .upload(objectName, fileBuffer, {
-        contentType: fileMime,
-        upsert: false
-      });
+    // ملاحظة: إذا كان اسم الـ bucket هو "proofs"، فلا تكرر "proofs/" في الاسم.
+    // يمكنك تركه داخل مجلد فرعي (اختياري) مثل "incoming/..."
+    const objectName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
-    if (uploadError) {
-      return { statusCode: 500, body: JSON.stringify({ error: uploadError.message }) };
+    let uploadRes;
+    try {
+      uploadRes = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .upload(objectName, fileBuffer, {
+          contentType: fileMime,
+          upsert: false
+        });
+    } catch (e) {
+      console.error("[UPLOAD THROWN EXCEPTION]", e);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ step: "upload", error: String(e?.message || e) })
+      };
     }
 
-    // رابط موقّت (ساعة) للاستخدام الداخلي عند الحاجة
-    const { data: signed } = await supabase
-      .storage
-      .from(SUPABASE_BUCKET)
-      .createSignedUrl(objectName, 60 * 60); // 1 ساعة
+    if (uploadRes.error) {
+      console.error("[UPLOAD ERROR]", uploadRes.error);
+      return { statusCode: 500, body: JSON.stringify({ step: "upload", error: uploadRes.error.message }) };
+    }
+
+    let signedUrlRes;
+    try {
+      signedUrlRes = await supabase
+        .storage
+        .from(SUPABASE_BUCKET)
+        .createSignedUrl(objectName, 60 * 60);
+    } catch (e) {
+      console.error("[SIGNED URL EXCEPTION]", e);
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ step: "signedUrl", error: String(e?.message || e) })
+      };
+    }
+
+    if (signedUrlRes.error) {
+      console.error("[SIGNED URL ERROR]", signedUrlRes.error);
+      return { statusCode: 500, body: JSON.stringify({ step: "signedUrl", error: signedUrlRes.error.message }) };
+    }
 
     return {
       statusCode: 200,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         path: objectName,
-        url: signed?.signedUrl || null,
-      }),
-      headers: { "Content-Type": "application/json" }
+        url: signedUrlRes.data?.signedUrl || null
+      })
     };
+
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    console.error("[CATCH TOP-LEVEL]", err);
+    return { statusCode: 500, body: JSON.stringify({ error: String(err?.message || err) }) };
   }
-};
+}
