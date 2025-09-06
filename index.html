@@ -29,19 +29,74 @@
     .hint{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px;margin-top:6px}
     .sep{height:1px;background:#eee;margin:10px 0}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
+
+    /* أزرار الهيدر الصغيرة يسار */
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+      margin-inline-start: auto; /* يدفع الأزرار لليسار في RTL */
+    }
+    .nav-btn {
+      padding: 6px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #f9f9f9;
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: none;
+      color: #111;
+      transition: all 0.2s ease;
+    }
+    .nav-btn:hover {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+
+    /* أيقونة تلجرام العائمة + نبض */
+    .telegram-float{
+      position:fixed;
+      bottom:20px;
+      left:20px;
+      z-index:999;
+      background:#0F3D5E; /* الأزرق الغامق */
+      border-radius:50%;
+      width:54px;
+      height:54px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 4px 12px rgba(0,0,0,.25);
+      transition:.25s ease;
+      animation:pulse 2s infinite;
+    }
+    .telegram-float:hover{ background:#0b2d45 }
+    .telegram-float img{
+      width:28px; height:28px;
+      filter:brightness(0) invert(1); /* الأيقونة باللون الأبيض */
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow:0 0 0 0 rgba(15,61,94,0.6); }
+      70% { transform: scale(1.08); box-shadow:0 0 0 12px rgba(15,61,94,0); }
+      100% { transform: scale(1); box-shadow:0 0 0 0 rgba(15,61,94,0); }
+    }
   </style>
 </head>
 <body>
 <header>
   <div>
     <h1>منصة الشكايات والتقارير</h1>
-    <div class="muted">تُنشر الشكايات بملخص فقط، والوثائق الموقعة تُحفظ لدى الإدارة ولا تُفتح للعامة. التقارير تُعرض كاملة ما لم تتضمن بيانات حساسة.</div>
+    <div class="muted">
+      تُنشر الشكايات بملخص فقط، والوثائق الموقعة تُحفظ لدى الإدارة ولا تُفتح للعامة. 
+      التقارير تُعرض كاملة ما لم تتضمن بيانات حساسة.
+    </div>
   </div>
-  <div class="row">
-    <button id="toComplaints" class="btn">➕ إضافة شكوى</button>
-    <button id="toReports" class="btn outline">📑 إضافة تقرير</button>
-    <a href="about.html" class="btn outline">ℹ️ حول المنصة</a>
-  </div>
+  <nav class="nav-actions">
+    <a id="toComplaints" class="nav-btn">➕ شكوى</a>
+    <a id="toReports" class="nav-btn">📑 تقرير</a>
+    <a href="about.html" class="nav-btn">ℹ️ حول المنصة</a>
+  </nav>
 </header>
 
   <!-- تبويبات -->
@@ -140,6 +195,11 @@
   <footer class="muted">
     <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
   </footer>
+
+<!-- أيقونة تلجرام الثابتة -->
+<a href="https://t.me/chikayalive" class="telegram-float" target="_blank" rel="noopener" title="انضم إلى قناتنا على تلجرام">
+  <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram" />
+</a>
 
 <script>
 /* إعدادات مشروعك */

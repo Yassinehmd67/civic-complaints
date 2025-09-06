@@ -11,13 +11,41 @@
     header{display:flex;justify-content:space-between;align-items:center;gap:var(--gap);flex-wrap:wrap;margin-bottom:10px}
     a{color:#0a66c2;text-decoration:none}
     a:hover{text-decoration:underline}
-    .btn{padding:10px 14px;border-radius:12px;background:#111;color:#fff}
+    .btn{padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none}
     .card{border:1px solid #e6e6e6;border-radius:14px;background:#fff;padding:16px;margin:14px 0}
     h1,h2{margin:6px 0 10px}
     .muted{color:#666}
     ul{margin:8px 0 0 0;padding:0 20px}
     .note{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px;margin-top:8px}
-    footer{margin-top:18px;color:#666}
+    footer{margin-top:18px;color:#666;text-align:center}
+
+    /* أيقونة تلجرام العائمة (صغيرة) */
+    .telegram-float{
+      position:fixed;
+      bottom:16px;
+      left:16px;
+      z-index:999;
+      background:#0F3D5E;
+      border-radius:50%;
+      width:44px;
+      height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 4px 12px rgba(0,0,0,.22);
+      transition:.25s ease;
+      animation:pulse 2.4s infinite;
+    }
+    .telegram-float:hover{ background:#0b2d45 }
+    .telegram-float img{
+      width:22px; height:22px;
+      filter:brightness(0) invert(1);
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow:0 0 0 0 rgba(15,61,94,0.5); }
+      70% { transform: scale(1.06); box-shadow:0 0 0 10px rgba(15,61,94,0); }
+      100% { transform: scale(1); box-shadow:0 0 0 0 rgba(15,61,94,0); }
+    }
   </style>
 </head>
 <body>
@@ -28,7 +56,7 @@
     <div class="muted">تعريف، أهداف، سياسة قانونية، وخصوصية</div>
   </div>
   <nav>
-    <a class="btn" href="./index.html">العودة للواجهة</a>
+    <a class="btn" href="./index.html">⬅ العودة للواجهة</a>
   </nav>
 </header>
 
@@ -95,6 +123,11 @@
 <footer>
   <p>© منصة الشكايات والتقارير — مشروع مدني غير ربحي.</p>
 </footer>
+
+<!-- أيقونة تلجرام الثابتة (صغيرة) -->
+<a href="https://t.me/chikayalive" class="telegram-float" target="_blank" rel="noopener" title="انضم إلى قناتنا على تلجرام">
+  <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram" />
+</a>
 
 </body>
 </html>
