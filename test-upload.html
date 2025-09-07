@@ -1,22 +1,23 @@
 <!doctype html>
 <meta charset="utf-8">
-<h3>اختبار رفع ملف إلى uploadProof</h3>
-<input type="file" id="f">
-<button id="go">رفع</button>
+<title>رفع اختبار</title>
+<h1>اختبار رفع إلى Supabase عبر Netlify Function</h1>
+<form id="f" enctype="multipart/form-data" method="post">
+  <input type="file" name="file" accept=".pdf,image/png,image/jpeg" required>
+  <button>رفع</button>
+</form>
 <pre id="out"></pre>
 <script>
-const FN = "https://delicate-maamoul-683849.netlify.app/.netlify/functions/uploadProof";
-document.getElementById("go").onclick = async () => {
-  const o = document.getElementById("out");
-  const f = document.getElementById("f").files[0];
-  if(!f){ o.textContent = "اختر ملفاً أولاً"; return; }
-  const fd = new FormData();
-  fd.append("file", f, f.name);
-  try{
-    const r = await fetch(FN, { method:"POST", body: fd });
-    o.textContent = await r.text();
-  }catch(e){
-    o.textContent = "Fetch error: " + e.message;
+const FN = "/.netlify/functions/uploadProof";
+f.onsubmit = async (e)=>{
+  e.preventDefault();
+  out.textContent = "جارٍ الرفع...";
+  try {
+    const r = await fetch(FN, { method:"POST", body:new FormData(f) });
+    const t = await r.text();
+    out.textContent = t;
+  } catch(err) {
+    out.textContent = "خطأ: " + err.message;
   }
 };
 </script>

@@ -5,8 +5,10 @@
   external_node_modules = ["@supabase/supabase-js", "busboy", "bcryptjs"]
   included_files = ["netlify/functions/**"]
 
-# (اختياري) لو أردت رد CORS افتراضي لكل الدوال، يمكن ضبط Headers هنا
+# CORS لكل الدوال
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
