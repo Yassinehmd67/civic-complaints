@@ -30,89 +30,23 @@
     .actions{display:flex;gap:8px;flex-wrap:wrap}
 
     /* أزرار الهيدر الصغيرة يسار */
-    .nav-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-      margin-inline-start: auto; /* يدفع الأزرار لليسار في RTL */
-    }
-    .nav-btn {
-      padding: 6px 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      background: #f9f9f9;
-      font-size: 0.9rem;
-      cursor: pointer;
-      text-decoration: none;
-      color: #111;
-      transition: all 0.2s ease;
-    }
-    .nav-btn:hover {
-      background: #111;
-      color: #fff;
-      border-color: #111;
-    }
+    .nav-actions { display:flex;gap:8px;margin-top:8px;margin-inline-start:auto; }
+    .nav-btn { padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#f9f9f9;font-size:0.9rem;cursor:pointer;text-decoration:none;color:#111;transition:.2s; }
+    .nav-btn:hover { background:#111;color:#fff;border-color:#111; }
 
     /* العنوان الرئيسي في الوسط داخل بطاقة أنيقة */
-    .title-card {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      padding: 16px 20px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      margin: 0 auto 12px;
-      text-align: center;
-      width: 100%;
-    }
-    .title-card h1 {
-      margin: 0 0 6px;
-      font-size: 1.8rem;
-      color: #0a0a0a;
-    }
-    .title-card .muted {
-      text-align: center;
-      font-size: 0.92rem;
-      color: #555;
-    }
+    .title-card { background:#f9f9f9;border:1px solid #ddd;border-radius:12px;padding:16px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);margin:0 auto 12px;text-align:center;width:100% }
+    .title-card h1 { margin:0 0 6px;font-size:1.8rem;color:#0a0a0a }
+    .title-card .muted { text-align:center;font-size:0.92rem;color:#555 }
 
     /* العناوين الفرعية موحدة (يمين وبنفس المستوى) */
-    .section-title {
-      background: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-      padding: 12px 16px;
-      margin-bottom: 14px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.07);
-      text-align: right; /* توحيد المحاذاة لليمين */
-    }
-    .section-title h2 {
-      margin: 0;
-      font-size: 1.4rem;
-      color: #0a0a0a;
-    }
+    .section-title { background:#f9f9f9;border:1px solid #ddd;border-radius:10px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 5px rgba(0,0,0,0.07);text-align:right }
+    .section-title h2 { margin:0;font-size:1.4rem;color:#0a0a0a }
 
     /* أيقونة تيلجرام العائمة + نبض */
-    .telegram-fab {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      background: #0088cc;
-      border-radius: 50%;
-      width: 54px;
-      height: 54px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,.2);
-      animation: pulse 1.5s infinite;
-      z-index: 999;
-    }
-    .telegram-fab:hover { background: #006fa1 }
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
+    .telegram-fab { position:fixed;bottom:20px;left:20px;background:#0088cc;border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:pulse 1.5s infinite;z-index:999 }
+    .telegram-fab:hover { background:#006fa1 }
+    @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
   </style>
 </head>
 <body>
@@ -120,7 +54,7 @@
   <div class="title-card">
     <h1>منصة الشكايات والتقارير</h1>
     <div class="muted">
-      تُنشر الشكايات بملخص فقط، والوثائق الموقعة تُحفظ لدى الإدارة ولا تُفتح للعامة. 
+      تُنشر الشكايات بملخص فقط، والوثائق الموقعة تُحفظ لدى الإدارة ولا تُفتح للعامة.
       التقارير تُعرض كاملة ما لم تتضمن بيانات حساسة.
     </div>
   </div>
@@ -229,18 +163,26 @@
   </footer>
 
 <!-- أيقونة تيلجرام -->
-<a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام">
+<a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
     <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
   </svg>
 </a>
 
-<script>
-/* إعدادات مشروعك */
+<script type="module">
+/* === إعدادات مشروعك العامة === */
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
 const API_BASE   = "https://api.github.com";
 const FN_BASE    = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+
+/* === رفع مباشر إلى Supabase عبر توقيع خادم (لتسريع الهواتف) === */
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+/* أدخل الـ anon key العام هنا (غير سري) */
+const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
+const SUPABASE_ANON = "ضع_هنا_anon_key_الخاصة_بمشروعك"; /* ← استبدلها بمفتاح anon من صفحة API */
+const SUPABASE_BUCKET = "proofs";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* التنقل بين التبويبات */
 const tabs = document.querySelectorAll(".tab-btn");
@@ -383,16 +325,18 @@ function bindCommentForms(scope=document){
       };
       const status = form.querySelector(".status");
       status.textContent = "جارٍ الإرسال…";
-      const r = await fetch(`${FN_BASE}/submitComment`, {
-        method:"POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
-      });
-      status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
-      if(r.ok){
-        form.reset();
-        const c = document.getElementById(`c-${payload.issueNumber}`);
-        if(c) c.textContent = String(Number(c.textContent||"0")+1);
-      }
+      try{
+        const r = await fetch(`${FN_BASE}/submitComment`, {
+          method:"POST", headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+        status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
+        if(r.ok){
+          form.reset();
+          const c = document.getElementById(`c-${payload.issueNumber}`);
+          if(c) c.textContent = String(Number(c.textContent||"0")+1);
+        }
+      }catch{ status.textContent = "تعذّر الإرسال." }
     });
   });
 }
@@ -420,7 +364,7 @@ async function upvote(issueNumber){
   }
 }
 
-/* إرسال الشكوى (مع رفع مرفق إلزامي) */
+/* === إرسال الشكوى: رفع مباشر إلى Supabase مع مسار بديل للخادم === */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -429,22 +373,50 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   const status = document.getElementById("complaintStatus");
   status.textContent = "جارٍ الرفع والتحقق…";
 
-  // رفع الملف أولًا
+  // الملف إلزامي
   const file = fd.get("proofFile");
   if(!file || file.size===0){
     status.textContent = "الملف الموقّع مطلوب.";
     return;
   }
-  const upFd = new FormData();
-  upFd.append("file", file, file.name);
-  const upRes = await fetch(`${FN_BASE}/uploadProof`, { method:"POST", body: upFd });
-  if(!upRes.ok){
-    status.textContent = "تعذّر رفع الملف. تحقّق من النوع/الحجم.";
-    return;
-  }
-  const upJson = await upRes.json();
-  const proofUrl = upJson.url || "";
 
+  let proofUrl = "";
+
+  // 1) محاولة الرفع المباشر (أفضل للهواتف)
+  try{
+    // اطلب تذكرة رفع موقّعة من الخادم
+    const tk = await fetch(`${FN_BASE}/getUploadTicket`, {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ mime: file.type || "application/pdf" })
+    });
+    if(!tk.ok) throw new Error("فشل تحضير تذكرة الرفع");
+    const { path, token } = await tk.json();
+
+    // ارفع الملف إلى Supabase مباشرة بالتذكرة
+    const up = await supabase.storage.from(SUPABASE_BUCKET)
+      .uploadToSignedUrl(path, token, file, { upsert:false, contentType: file.type || "application/octet-stream" });
+    if(up.error) throw up.error;
+
+    // أنشئ رابطًا موقّتًا لتمريره للباك
+    const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 60*60);
+    proofUrl = signed.data?.signedUrl || "";
+  }catch(err){
+    console.warn("Direct upload failed, falling back to server:", err);
+    // 2) مسار بديل: ارفع إلى دالة الخادم (تحسبًا لبيئات قديمة)
+    try{
+      const upFd = new FormData();
+      upFd.append("file", file, file.name);
+      const upRes = await fetch(`${FN_BASE}/uploadProof`, { method:"POST", body: upFd });
+      if(!upRes.ok) throw new Error("تعذّر رفع الملف (الخادم)");
+      const upJson = await upRes.json();
+      proofUrl = upJson.url || "";
+    }catch(err2){
+      status.textContent = "تعذّر رفع الملف. تحقّق من الاتصال أو جرّب لاحقًا.";
+      return;
+    }
+  }
+
+  // 3) أرسل بيانات الشكوى بعد نجاح رفع الملف
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -454,27 +426,32 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     summary: fd.get("summary"),
     proofUrl
   };
-  const r = await fetch(`${FN_BASE}/submitComplaint`, {
-    method:"POST", headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  });
 
-  if(!r.ok){
-    status.textContent = "تعذّر إرسال الشكوى.";
-    return;
+  try{
+    const r = await fetch(`${FN_BASE}/submitComplaint`, {
+      method:"POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+
+    if(!r.ok){
+      status.textContent = "تعذّر إرسال الشكوى.";
+      return;
+    }
+
+    const data = await r.json(); // { number, html_url }
+    status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+    form.reset();
+
+    // افتح تبويب تتبع الحالة وجهّز الرقم
+    document.querySelector('.tab-btn[data-tab="statusTab"]').click();
+    const tn = document.getElementById("trackNumber");
+    if(tn){ tn.value = data.number; }
+  }catch{
+    status.textContent = "تعذّر إرسال الشكوى. تحقّق من اتصالك.";
   }
-
-  const data = await r.json(); // { number, html_url }
-  status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
-  form.reset();
-
-  // افتح تبويب تتبع الحالة وجهّز الرقم
-  document.querySelector('.tab-btn[data-tab="statusTab"]').click();
-  const tn = document.getElementById("trackNumber");
-  if(tn){ tn.value = data.number; }
 });
 
-/* إرسال التقرير */
+/* إرسال التقرير (بدون رفع ملفات، كما هو) */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -491,24 +468,28 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
     body: fd.get("body"),
     evidenceUrl: fd.get("evidenceUrl")
   };
-  const r = await fetch(`${FN_BASE}/submitReport`, {
-    method:"POST", headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(payload)
-  });
+  try{
+    const r = await fetch(`${FN_BASE}/submitReport`, {
+      method:"POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
 
-  if(!r.ok){
-    status.textContent = "تعذّر إرسال التقرير.";
-    return;
+    if(!r.ok){
+      status.textContent = "تعذّر إرسال التقرير.";
+      return;
+    }
+
+    const data = await r.json(); // { number, html_url }
+    status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+    form.reset();
+
+    // افتح تبويب تتبع الحالة مع تعبئة الرقم
+    document.querySelector('.tab-btn[data-tab="statusTab"]').click();
+    const tn = document.getElementById("trackNumber");
+    if(tn){ tn.value = data.number; }
+  }catch{
+    status.textContent = "تعذّر إرسال التقرير. تحقّق من اتصالك.";
   }
-
-  const data = await r.json(); // { number, html_url }
-  status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
-  form.reset();
-
-  // افتح تبويب تتبع الحالة مع تعبئة الرقم
-  document.querySelector('.tab-btn[data-tab="statusTab"]').click();
-  const tn = document.getElementById("trackNumber");
-  if(tn){ tn.value = data.number; }
 });
 
 /* تتبع الحالة */
