@@ -1,38 +1,29 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>اختبار رفع ملف</title>
-</head>
-<body>
-  <h1>اختبار رفع ملف إلى Supabase</h1>
+import { createClient } from "@supabase/supabase-js";
 
-  <form id="uploadForm">
-    <input type="file" name="file" required />
-    <button type="submit">رفع</button>
-  </form>
+const { SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_BUCKET } = process.env;
 
-  <pre id="result"></pre>
-
-<script>
-document.getElementById("uploadForm").addEventListener("submit", async (e)=>{
-  e.preventDefault();
-  const form = e.target;
-  const fd = new FormData(form); // هذا يضمن multipart/form-data
-
+export async function handler() {
   try {
-    const res = await fetch("/.netlify/functions/uploadProof", {
-      method: "POST",
-      body: fd
-    });
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
+      return { statusCode: 500, body: "❌ Env vars ناقصة" };
+    }
 
-    const txt = await res.text();
-    document.getElementById("result").textContent = txt;
-  } catch(err) {
-    document.getElementById("result").textContent = "خطأ: " + err.message;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
+
+    const bytes = Buffer.from("Hello from Netlify testUpload!");
+    const objectName = `proofs/test-${Date.now()}.txt`;
+
+    const { error } = await supabase
+      .storage
+      .from(SUPABASE_BUCKET)
+      .upload(objectName, bytes, { contentType: "text/plain" });
+
+    if (error) {
+      return { statusCode: 500, body: `❌ Upload error: ${error.message}` };
+    }
+
+    return { statusCode: 200, body: `✅ رفع ناجح: ${objectName}` };
+  } catch (e) {
+    return { statusCode: 500, body: `❌ Exception: ${e.message}` };
   }
-});
-</script>
-</body>
-</html>
+}
