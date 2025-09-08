@@ -3,53 +3,65 @@ import bcrypt from "bcryptjs";
 
 export const config = { path: "/.netlify/functions/adminSetStatus" };
 
-function cors(res){
+function cors(res) {
   return {
     ...res,
     headers: {
-      "Access-Control-Allow-Origin":"*",
-      "Access-Control-Allow-Headers":"Content-Type",
-    }
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
+      "Access-Control-Allow-Methods": "POST,OPTIONS",
+      "Content-Type": "application/json",
+    },
   };
 }
 
-const STATE_LABELS = new Set(["pending","approved","rejected","under-review","needs-more-info"]);
+const STATE_LABELS = new Set(["pending", "approved", "rejected", "under-review", "needs-more-info"]);
 
-export async function handler(event){
-  if(event.httpMethod === "OPTIONS") return cors({ statusCode:200, body:"" });
-  if(event.httpMethod !== "POST")    return cors({ statusCode:405, body:"Method Not Allowed" });
-
-  const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN, ADMIN_HASH } = process.env;
-  if(!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN || !ADMIN_HASH){
-    return cors({ statusCode:500, body:"Server env missing" });
+export async function handler(event) {
+  if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
+  if (event.httpMethod !== "POST") {
+    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
   }
 
-  try{
+  const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN, ADMIN_HASH } = process.env;
+  if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN || !ADMIN_HASH) {
+    return cors({ statusCode: 500, body: JSON.stringify({ error: "Server env missing" }) });
+  }
+
+  try {
     const { number, state, password } = JSON.parse(event.body || "{}");
-    if(!number || !state || !password) return cors({ statusCode:422, body:"invalid payload" });
-    if(!STATE_LABELS.has(state))       return cors({ statusCode:422, body:"invalid state" });
+
+    // تحقق أولي من الحمولة
+    if (!number || !state || !password) {
+      return cors({ statusCode: 422, body: JSON.stringify({ error: "invalid payload" }) });
+    }
+    if (!STATE_LABELS.has(String(state))) {
+      return cors({ statusCode: 422, body: JSON.stringify({ error: "invalid state" }) });
+    }
 
     // تحقق كلمة السر (Bcrypt)
-    const ok = await bcrypt.compare(password, ADMIN_HASH);
-    if(!ok) return cors({ statusCode:401, body:"كلمة السر غير صحيحة" });
+    const ok = await bcrypt.compare(String(password), String(ADMIN_HASH));
+    if (!ok) {
+      return cors({ statusCode: 401, body: JSON.stringify({ error: "كلمة السر غير صحيحة" }) });
+    }
 
-    // اقرأ الـIssue الحالي
+    // جلب الـ Issue الحالي
     const issueUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${number}`;
     const getRes = await fetch(issueUrl, {
       headers: {
         "Authorization": `Bearer ${GITHUB_TOKEN}`,
-        "Accept": "application/vnd.github+json"
-      }
+        "Accept": "application/vnd.github+json",
+      },
     });
-    if(!getRes.ok){
+    if (!getRes.ok) {
       const t = await getRes.text();
-      return cors({ statusCode:404, body:`issue not found: ${t}` });
+      return cors({ statusCode: 404, body: JSON.stringify({ error: `issue not found: ${t}` }) });
     }
     const issue = await getRes.json();
-    const current = (issue.labels || []).map(l=>l.name);
+    const current = (issue.labels || []).map((l) => l.name);
 
-    // فلترة الوسوم
-    const kept = current.filter(l => !STATE_LABELS.has(l));
+    // إزالة وسوم الحالة القديمة ثم إضافة الحالة الجديدة والحفاظ على بقية الوسوم
+    const kept = current.filter((l) => !STATE_LABELS.has(l));
     const labels = Array.from(new Set([...kept, state]));
 
     // تحديث الوسوم
@@ -58,19 +70,18 @@ export async function handler(event){
       headers: {
         "Authorization": `Bearer ${GITHUB_TOKEN}`,
         "Accept": "application/vnd.github+json",
-        "Content-Type":"application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ labels })
+      body: JSON.stringify({ labels }),
     });
 
-    if(!patchRes.ok){
+    if (!patchRes.ok) {
       const t = await patchRes.text();
-      return cors({ statusCode:500, body:`update failed: ${t}` });
+      return cors({ statusCode: 500, body: JSON.stringify({ error: `update failed: ${t}` }) });
     }
 
-    return cors({ statusCode:200, body:"ok" });
-
-  }catch(e){
-    return cors({ statusCode:500, body:String(e.message || e) });
+    return cors({ statusCode: 200, body: JSON.stringify({ ok: true }) });
+  } catch (e) {
+    return cors({ statusCode: 500, body: JSON.stringify({ error: e.message || String(e) }) });
   }
 }

@@ -170,17 +170,17 @@
 </a>
 
 <script type="module">
-/* === إعدادات مشروعك العامة === */
+/* === إعدادات مشروعك === */
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
 const API_BASE   = "https://api.github.com";
 const FN_BASE    = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
 
-/* === رفع مباشر إلى Supabase عبر توقيع خادم (لتسريع الهواتف) === */
+/* === رفع مباشر إلى Supabase عبر توقيع الخادم === */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-/* أدخل الـ anon key العام هنا (غير سري) */
+/* قيم Supabase العامة (مسموح وضع anon في الواجهة) */
 const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
-const SUPABASE_ANON = "ضع_هنا_anon_key_الخاصة_بمشروعك"; /* ← استبدلها بمفتاح anon من صفحة API */
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWFlZmZoeWdwa3preWNoZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwOTY0MzgsImV4cCI6MjA3MjY3MjQzOH0.N1Bfhu3bdAfberMBe1aK2xXVxr0xK42hlTlo7mM4uWE";
 const SUPABASE_BUCKET = "proofs";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
@@ -220,7 +220,7 @@ function statusLabel(labels){
   return "— غير محدد —";
 }
 
-/* بطاقة عرض عنصر */
+/* بطاقة عنصر */
 function cardFor(issue, type){
   const labels = issue.labels || [];
   const topic = labelValue(labels, "topic:");
@@ -271,7 +271,7 @@ function cardFor(issue, type){
   </article>`;
 }
 
-/* جلب العناصر approved من GitHub */
+/* جلب approved من GitHub */
 async function fetchApproved(page=1, acc=[]){
   const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues?state=open&labels=approved&per_page=100&page=${page}`;
   const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" }});
@@ -282,7 +282,7 @@ async function fetchApproved(page=1, acc=[]){
   return acc;
 }
 
-/* عرض الشكايات فقط */
+/* عرض الشكايات */
 async function renderComplaints(){
   const list = document.getElementById("complaintsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
@@ -297,7 +297,7 @@ async function renderComplaints(){
   }
 }
 
-/* عرض التقارير فقط */
+/* عرض التقارير */
 async function renderReports(){
   const list = document.getElementById("reportsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
@@ -312,7 +312,7 @@ async function renderReports(){
   }
 }
 
-/* ربط نماذج التعليقات ديناميكيًا */
+/* نماذج التعليقات */
 function bindCommentForms(scope=document){
   scope.querySelectorAll(".comment-form").forEach(form=>{
     form.addEventListener("submit", async (e)=>{
@@ -364,7 +364,7 @@ async function upvote(issueNumber){
   }
 }
 
-/* === إرسال الشكوى: رفع مباشر إلى Supabase مع مسار بديل للخادم === */
+/* === إرسال الشكوى: رفع مباشر إلى Supabase فقط === */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -373,50 +373,45 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   const status = document.getElementById("complaintStatus");
   status.textContent = "جارٍ الرفع والتحقق…";
 
-  // الملف إلزامي
   const file = fd.get("proofFile");
   if(!file || file.size===0){
     status.textContent = "الملف الموقّع مطلوب.";
     return;
   }
+  if(file.size > 10*1024*1024){
+    status.textContent = "حجم الملف أكبر من 10MB.";
+    return;
+  }
 
   let proofUrl = "";
-
-  // 1) محاولة الرفع المباشر (أفضل للهواتف)
   try{
-    // اطلب تذكرة رفع موقّعة من الخادم
-    const tk = await fetch(`${FN_BASE}/getUploadTicket`, {
+    // 1) احصل على تذكرة رفع
+    const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ mime: file.type || "application/pdf" })
     });
-    if(!tk.ok) throw new Error("فشل تحضير تذكرة الرفع");
-    const { path, token } = await tk.json();
+    if(!tkRes.ok){
+      const t = await tkRes.text();
+      throw new Error("فشل تحضير تذكرة الرفع: " + t);
+    }
+    const { path, token } = await tkRes.json();
 
-    // ارفع الملف إلى Supabase مباشرة بالتذكرة
+    // 2) ارفع الملف مباشرة بالتذكرة
     const up = await supabase.storage.from(SUPABASE_BUCKET)
       .uploadToSignedUrl(path, token, file, { upsert:false, contentType: file.type || "application/octet-stream" });
     if(up.error) throw up.error;
 
-    // أنشئ رابطًا موقّتًا لتمريره للباك
+    // 3) أنشئ رابطًا موقّتًا ليمر إلى الباك/الإدارة
     const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 60*60);
     proofUrl = signed.data?.signedUrl || "";
+    if(!proofUrl) throw new Error("تعذّر توليد رابط موقّت للملف");
   }catch(err){
-    console.warn("Direct upload failed, falling back to server:", err);
-    // 2) مسار بديل: ارفع إلى دالة الخادم (تحسبًا لبيئات قديمة)
-    try{
-      const upFd = new FormData();
-      upFd.append("file", file, file.name);
-      const upRes = await fetch(`${FN_BASE}/uploadProof`, { method:"POST", body: upFd });
-      if(!upRes.ok) throw new Error("تعذّر رفع الملف (الخادم)");
-      const upJson = await upRes.json();
-      proofUrl = upJson.url || "";
-    }catch(err2){
-      status.textContent = "تعذّر رفع الملف. تحقّق من الاتصال أو جرّب لاحقًا.";
-      return;
-    }
+    console.error("Direct upload error:", err);
+    status.textContent = "تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
+    return;
   }
 
-  // 3) أرسل بيانات الشكوى بعد نجاح رفع الملف
+  // 4) أرسل بيانات الشكوى
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -434,7 +429,8 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     });
 
     if(!r.ok){
-      status.textContent = "تعذّر إرسال الشكوى.";
+      const t = await r.text();
+      status.textContent = "تعذّر إرسال الشكوى: " + t;
       return;
     }
 
@@ -446,12 +442,12 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
     if(tn){ tn.value = data.number; }
-  }catch{
+  }catch(err){
     status.textContent = "تعذّر إرسال الشكوى. تحقّق من اتصالك.";
   }
 });
 
-/* إرسال التقرير (بدون رفع ملفات، كما هو) */
+/* إرسال التقرير كما هو */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -483,7 +479,7 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
 
-    // افتح تبويب تتبع الحالة مع تعبئة الرقم
+    // افتح تبويب تتبع الحالة
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
     if(tn){ tn.value = data.number; }
@@ -522,7 +518,7 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
   }
 });
 
-/* تحميل تبويب بالمراجع إن وُجد ref في الرابط */
+/* ref= */
 (function init(){
   const params = new URLSearchParams(location.search);
   const ref = params.get("ref");

@@ -2,41 +2,58 @@
 export const config = { path: "/.netlify/functions/upvoteIssue" };
 
 function cors(res) {
-  return { ...res, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
+  return {
+    ...res,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+      "Access-Control-Allow-Methods": "POST,OPTIONS",
+      "Content-Type": "application/json",
+    },
+  };
 }
 
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
-  if (event.httpMethod !== "POST")  return cors({ statusCode: 405, body: "Method Not Allowed" });
+  if (event.httpMethod !== "POST") {
+    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
+  }
 
   const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN } = process.env;
   if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
-    return cors({ statusCode: 500, body: "Missing server env" });
+    return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing server env" }) });
   }
 
   try {
     const { issueNumber } = JSON.parse(event.body || "{}");
-    if (!issueNumber) return cors({ statusCode: 422, body: "issueNumber مطلوب." });
+    if (!issueNumber) {
+      return cors({ statusCode: 422, body: JSON.stringify({ error: "issueNumber مطلوب." }) });
+    }
 
-    // Endpoint: Reactions API
+    // GitHub Reactions API
     const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}/reactions`;
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${GITHUB_TOKEN}`,
-        "Accept": "application/vnd.github+json; application/vnd.github.squirrel-girl-preview+json",
+        "Accept": "application/vnd.github+json, application/vnd.github.squirrel-girl-preview+json",
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ content: "+1" })
+      body: JSON.stringify({ content: "+1" }),
     });
 
-    // إذا كان لدى نفس الحساب Reaction سابق يرجّع 200/201 أو 200 مع خطأ ثانوي — نتجاهله
-    if (!res.ok && res.status !== 200 && res.status !== 201) {
-      const t = await res.text();
-      return cors({ statusCode: 500, body: `GitHub reaction error: ${t}` });
+    // GitHub يرجع:
+    // 201 = Reaction مضافة، 200 = Reaction موجودة مسبقًا (لا بأس)، 409 = تعارض (مكررة) → نعتبرها OK
+    if ([200, 201, 409].includes(res.status)) {
+      return cors({ statusCode: 200, body: JSON.stringify({ ok: true }) });
     }
-    return cors({ statusCode: 200, body: "OK" });
+
+    const text = await res.text();
+    return cors({
+      statusCode: res.status,
+      body: JSON.stringify({ error: `GitHub reaction error: ${text}` }),
+    });
   } catch (e) {
-    return cors({ statusCode: 500, body: String(e.message || e) });
+    return cors({ statusCode: 500, body: JSON.stringify({ error: e.message || String(e) }) });
   }
 }
