@@ -34,16 +34,20 @@
     .nav-btn { padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#f9f9f9;font-size:0.9rem;cursor:pointer;text-decoration:none;color:#111;transition:.2s; }
     .nav-btn:hover { background:#111;color:#fff;border-color:#111; }
 
-    /* العنوان الرئيسي في الوسط داخل بطاقة أنيقة */
+    /* العنوان الرئيسي */
     .title-card { background:#f9f9f9;border:1px solid #ddd;border-radius:12px;padding:16px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);margin:0 auto 12px;text-align:center;width:100% }
     .title-card h1 { margin:0 0 6px;font-size:1.8rem;color:#0a0a0a }
     .title-card .muted { text-align:center;font-size:0.92rem;color:#555 }
 
-    /* العناوين الفرعية موحدة (يمين وبنفس المستوى) */
+    /* العناوين الفرعية */
     .section-title { background:#f9f9f9;border:1px solid #ddd;border-radius:10px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 5px rgba(0,0,0,0.07);text-align:right }
     .section-title h2 { margin:0;font-size:1.4rem;color:#0a0a0a }
 
-    /* أيقونة تيلجرام العائمة + نبض */
+    /* تبويب التبرعات باللون الأزرق الفاتح */
+    .tab-btn.donation-btn { background:#e6f3ff; border:1px solid #99cfff; color:#005599; font-weight:bold; }
+    .tab-btn.donation-btn.active { background:#005599; color:#fff; border-color:#005599; }
+
+    /* أيقونة تيلجرام */
     .telegram-fab { position:fixed;bottom:20px;left:20px;background:#0088cc;border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:pulse 1.5s infinite;z-index:999 }
     .telegram-fab:hover { background:#006fa1 }
     @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
@@ -59,108 +63,131 @@
     </div>
   </div>
   <nav class="nav-actions">
-    <a id="toComplaints" class="nav-btn">➕ شكوى</a>
-    <a id="toReports" class="nav-btn">📑 تقرير</a>
+    <a id="toComplaints" class="nav-btn" href="#">➕ شكوى</a>
+    <a id="toReports" class="nav-btn" href="#">📑 تقرير</a>
     <a href="about.html" class="nav-btn">ℹ️ حول المنصة</a>
   </nav>
 </header>
 
-  <!-- تبويبات -->
-  <section class="tabs">
-    <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
-    <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
-    <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
-    <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
-    <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
-  </section>
+<!-- التبويبات -->
+<section class="tabs">
+  <button type="button" class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
+  <button type="button" class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
+  <button type="button" class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
+  <button type="button" class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
+  <button type="button" class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
+  <button type="button" class="tab-btn donation-btn" data-tab="donationsTab">💝 التبرعات</button>
+</section>
 
-  <!-- تبويب تتبع الحالة -->
-  <section id="statusTab" class="card" style="display:none">
-    <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
-    <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
+<!-- تبويب تتبع الحالة -->
+<section id="statusTab" class="card" style="display:none">
+  <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
+  <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
+  <div class="row">
+    <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
+    <button id="trackBtn" class="btn">استعلام</button>
+  </div>
+  <div id="trackResult" style="margin-top:12px"></div>
+</section>
+
+<!-- نموذج الشكوى -->
+<section id="complaintTab" class="card">
+  <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
+  <p class="muted">لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.</p>
+  <form id="complaintForm">
+    <label>الاسم الكامل</label>
+    <input name="fullName" required placeholder="الاسم كما في البطاقة" />
+    <label>إظهار الاسم للعموم؟</label>
+    <select name="showName" required>
+      <option value="yes">نعم، اعرض اسمي</option>
+      <option value="no">لا، أخفِ اسمي</option>
+    </select>
+    <label>تاريخ تقديم الشكوى</label>
+    <input type="date" name="submittedDate" required />
+    <label>نوع الشكوى</label>
+    <select name="category" required>
+      <option value="">— اختر —</option>
+      <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+    </select>
+    <label>المدينة/المكان (اختياري)</label>
+    <input name="place" placeholder="مثال: فاس - مسجد ..." />
+    <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
+    <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
+    <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
+    <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
+    <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
     <div class="row">
-      <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
-      <button id="trackBtn" class="btn">استعلام</button>
+      <button type="submit" class="btn">إرسال الشكوى</button>
+      <span id="complaintStatus" class="muted"></span>
     </div>
-    <div id="trackResult" style="margin-top:12px"></div>
-  </section>
+  </form>
+</section>
 
-  <!-- نموذج الشكوى -->
-  <section id="complaintTab" class="card">
-    <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
-    <p class="muted">لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.</p>
-    <form id="complaintForm">
-      <label>الاسم الكامل</label>
-      <input name="fullName" required placeholder="الاسم كما في البطاقة" />
-      <label>إظهار الاسم للعموم؟</label>
-      <select name="showName" required>
-        <option value="yes">نعم، اعرض اسمي</option>
-        <option value="no">لا، أخفِ اسمي</option>
-      </select>
-      <label>تاريخ تقديم الشكوى</label>
-      <input type="date" name="submittedDate" required />
-      <label>نوع الشكوى</label>
-      <select name="category" required>
-        <option value="">— اختر —</option>
-        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
-      </select>
-      <label>المدينة/المكان (اختياري)</label>
-      <input name="place" placeholder="مثال: فاس - مسجد ..." />
-      <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
-      <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
-      <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
-      <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
-      <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
-      <div class="row">
-        <button type="submit" class="btn">إرسال الشكوى</button>
-        <span id="complaintStatus" class="muted"></span>
-      </div>
-    </form>
-  </section>
+<!-- نموذج التقرير -->
+<section id="reportTab" class="card" style="display:none">
+  <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
+  <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
+  <form id="reportForm">
+    <label>الاسم الكامل (اختياري للعرض العلني)</label>
+    <input name="fullName" placeholder="يمكن تركه فارغًا إن رغبت" />
+    <label>تاريخ/وقت الواقعة</label>
+    <input type="datetime-local" name="eventDateTime" required />
+    <label>المكان</label>
+    <input name="place" required placeholder="مسجد/حي/عنوان" />
+    <label>التصنيف</label>
+    <select name="category" required>
+      <option value="">— اختر —</option>
+      <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+    </select>
+    <label>نص التقرير (≥ 120 حرفًا)</label>
+    <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
+    <label>روابط أدلة (اختياري)</label>
+    <input name="evidenceUrl" type="url" placeholder="https://..." />
+    <div class="row">
+      <button type="submit" class="btn">إرسال التقرير</button>
+      <span id="reportStatus" class="muted"></span>
+    </div>
+  </form>
+</section>
 
-  <!-- نموذج التقرير -->
-  <section id="reportTab" class="card" style="display:none">
-    <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
-    <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
-    <form id="reportForm">
-      <label>الاسم الكامل (اختياري للعرض العلني)</label>
-      <input name="fullName" placeholder="يمكن تركه فارغًا إن رغبت" />
-      <label>تاريخ/وقت الواقعة</label>
-      <input type="datetime-local" name="eventDateTime" required />
-      <label>المكان</label>
-      <input name="place" required placeholder="مسجد/حي/عنوان" />
-      <label>التصنيف</label>
-      <select name="category" required>
-        <option value="">— اختر —</option>
-        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
-      </select>
-      <label>نص التقرير (≥ 120 حرفًا)</label>
-      <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
-      <label>روابط أدلة (اختياري)</label>
-      <input name="evidenceUrl" type="url" placeholder="https://..." />
-      <div class="row">
-        <button type="submit" class="btn">إرسال التقرير</button>
-        <span id="reportStatus" class="muted"></span>
-      </div>
-    </form>
-  </section>
+<!-- تبويب الشكايات المنشورة -->
+<section id="complaintsListTab" class="card" style="display:none">
+  <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
+  <div id="complaintsList" class="grid" aria-live="polite"></div>
+</section>
 
-  <!-- تبويب الشكايات المنشورة -->
-  <section id="complaintsListTab" class="card" style="display:none">
-    <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
-    <div id="complaintsList" class="grid" aria-live="polite"></div>
-  </section>
+<!-- تبويب التقارير المنشورة -->
+<section id="reportsListTab" class="card" style="display:none">
+  <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
+  <div id="reportsList" class="grid" aria-live="polite"></div>
+</section>
 
-  <!-- تبويب التقارير المنشورة -->
-  <section id="reportsListTab" class="card" style="display:none">
-    <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
-    <div id="reportsList" class="grid" aria-live="polite"></div>
-  </section>
+<!-- تبويب التبرعات -->
+<section id="donationsTab" class="card" style="display:none">
+  <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
+  <p class="muted">
+    إن هذه المنصة مجانية وهادفة لخدمة الصالح العام، لكن تشغيلها وتطويرها يتطلب تغطية تكاليف الاستضافة والصيانة.
+    دعمكم يساهم في استمرار العمل وتحسين جودة الخدمات المقدمة للجميع.
+  </p>
+  <h3>خيارات التبرع المتاحة:</h3>
+  <ul>
+    <li>💳 <b>USDT (BNB Smart Chain — BEP20):</b><br>
+      <code>0xcb6512713fbbe54b3e000294af0c0b8755ae0c58</code>
+    </li>
+    <li style="margin-top:10px">🏦 <b>بريد بنك (عبر التطبيق):</b><br>
+      <code>9408915</code>
+    </li>
+  </ul>
+  <div class="hint" style="margin-top:14px">
+    للحصول على معلومات إضافية أو استفسارات، تواصلوا معنا على الواتساب:<br>
+    <b>0721924217</b>
+  </div>
+</section>
 
-  <div class="sep"></div>
-  <footer class="muted">
-    <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
-  </footer>
+<div class="sep"></div>
+<footer class="muted">
+  <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
+</footer>
 
 <!-- أيقونة تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
@@ -169,36 +196,54 @@
   </svg>
 </a>
 
+<!-- اختيار تلقائي لقاعدة الدوال: محليًا أو إنتاج -->
+<script>
+  const IS_LOCAL = location.hostname === "localhost" || location.hostname === "127.0.0.1" || /^\d+\.\d+\.\d+\.\d+$/.test(location.hostname);
+  window.FN_BASE = IS_LOCAL
+    ? `${location.protocol}//${location.host}/.netlify/functions`
+    : "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+</script>
+
+<!-- سكربت التطبيق -->
 <script type="module">
 /* === إعدادات مشروعك === */
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
 const API_BASE   = "https://api.github.com";
-const FN_BASE    = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+const FN_BASE    = window.FN_BASE;
 
-/* === رفع مباشر إلى Supabase عبر توقيع الخادم === */
+/* === Supabase (مفتاح publishable فقط بالواجهة) === */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-/* قيم Supabase العامة (مسموح وضع anon في الواجهة) */
 const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWFlZmZoeWdwa3preWNoZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwOTY0MzgsImV4cCI6MjA3MjY3MjQzOH0.N1Bfhu3bdAfberMBe1aK2xXVxr0xK42hlTlo7mM4uWE";
+const SUPABASE_ANON = "sb_publishable_09A2DhmniXnqAgo2AW8RfQ_75ZkrTV7";
 const SUPABASE_BUCKET = "proofs";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* التنقل بين التبويبات */
-const tabs = document.querySelectorAll(".tab-btn");
-tabs.forEach(btn=>btn.onclick=()=>{
-  tabs.forEach(b=>b.classList.remove("active"));
-  btn.classList.add("active");
-  ["complaintTab","reportTab","complaintsListTab","reportsListTab","statusTab"].forEach(id=>{
-    document.getElementById(id).style.display = (btn.dataset.tab===id) ? "" : "none";
+/* === التنقّل بين التبويبات (متين) === */
+const sections = ["complaintTab","reportTab","complaintsListTab","reportsListTab","statusTab","donationsTab"];
+const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
+function showTab(id){
+  sections.forEach(secId=>{
+    const el = document.getElementById(secId);
+    if (el) el.style.display = (secId === id) ? "" : "none";
   });
-  if(btn.dataset.tab==="complaintsListTab") renderComplaints();
-  if(btn.dataset.tab==="reportsListTab") renderReports();
+  tabButtons.forEach(b=> b.classList.toggle("active", b.dataset.tab === id));
+}
+tabButtons.forEach(btn=>{
+  btn.type = "button";
+  btn.addEventListener("click",(e)=>{
+    e.preventDefault();
+    const id = btn.dataset.tab;
+    showTab(id);
+    if(id==="complaintsListTab") renderComplaints();
+    if(id==="reportsListTab")    renderReports();
+  });
 });
-document.getElementById("toComplaints").onclick = ()=>document.querySelector('.tab-btn[data-tab="complaintTab"]').click();
-document.getElementById("toReports").onclick   = ()=>document.querySelector('.tab-btn[data-tab="reportTab"]').click();
+document.getElementById("toComplaints").addEventListener("click", (e)=>{ e.preventDefault(); showTab("complaintTab"); });
+document.getElementById("toReports").addEventListener("click", (e)=>{ e.preventDefault(); showTab("reportTab"); });
+showTab("complaintTab");
 
-/* أدوات مساعدة */
+/* === أدوات مساعدة === */
 function labelValue(labels, prefix){
   const l = (labels||[]).find(x=>{
     const n = (x.name||x).toString();
@@ -220,7 +265,7 @@ function statusLabel(labels){
   return "— غير محدد —";
 }
 
-/* بطاقة عنصر */
+/* === بطاقة عنصر === */
 function cardFor(issue, type){
   const labels = issue.labels || [];
   const topic = labelValue(labels, "topic:");
@@ -271,7 +316,7 @@ function cardFor(issue, type){
   </article>`;
 }
 
-/* جلب approved من GitHub */
+/* === جلب approved من GitHub === */
 async function fetchApproved(page=1, acc=[]){
   const url = `${API_BASE}/repos/${REPO_OWNER}/${REPO_NAME}/issues?state=open&labels=approved&per_page=100&page=${page}`;
   const res = await fetch(url, { headers: { "Accept": "application/vnd.github+json" }});
@@ -282,7 +327,7 @@ async function fetchApproved(page=1, acc=[]){
   return acc;
 }
 
-/* عرض الشكايات */
+/* === عرض الشكايات === */
 async function renderComplaints(){
   const list = document.getElementById("complaintsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
@@ -297,7 +342,7 @@ async function renderComplaints(){
   }
 }
 
-/* عرض التقارير */
+/* === عرض التقارير === */
 async function renderReports(){
   const list = document.getElementById("reportsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
@@ -312,7 +357,7 @@ async function renderReports(){
   }
 }
 
-/* نماذج التعليقات */
+/* === نماذج التعليقات === */
 function bindCommentForms(scope=document){
   scope.querySelectorAll(".comment-form").forEach(form=>{
     form.addEventListener("submit", async (e)=>{
@@ -341,10 +386,10 @@ function bindCommentForms(scope=document){
   });
 }
 
-/* زر الإعجاب */
+/* === زر الإعجاب === */
 async function upvote(issueNumber){
   const btn = document.querySelector(`#card-${issueNumber} button`);
-  btn.disabled = true;
+  if(btn) btn.disabled = true;
   try{
     const r = await fetch(`${FN_BASE}/upvoteIssue`, {
       method:"POST", headers: {"Content-Type":"application/json"},
@@ -360,11 +405,13 @@ async function upvote(issueNumber){
   }catch(e){
     alert("تعذّر تسجيل الإعجاب.");
   }finally{
-    btn.disabled = false;
+    if(btn) btn.disabled = false;
   }
 }
+// اجعلها متاحة لـ onclick في القالب:
+window.upvote = upvote;
 
-/* === إرسال الشكوى: رفع مباشر إلى Supabase فقط === */
+/* === إرسال الشكوى: رفع مباشر إلى Supabase فقط (يرسل proofPath) === */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -383,11 +430,11 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     return;
   }
 
-  let proofUrl = "";
+  let proofPath = ""; // <-- هذا الذي سنرسله للخادم
   try{
-    // 1) احصل على تذكرة رفع
+    // 1) احصل على تذكرة الرفع
     const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST", headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ mime: file.type || "application/pdf" })
     });
     if(!tkRes.ok){
@@ -395,23 +442,32 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
       throw new Error("فشل تحضير تذكرة الرفع: " + t);
     }
     const { path, token } = await tkRes.json();
+    proofPath = path;
 
-    // 2) ارفع الملف مباشرة بالتذكرة
-    const up = await supabase.storage.from(SUPABASE_BUCKET)
-      .uploadToSignedUrl(path, token, file, { upsert:false, contentType: file.type || "application/octet-stream" });
-    if(up.error) throw up.error;
+    // 2) ارفع الملف إلى Supabase باستخدام التذكرة
+    const up = await supabase.storage
+      .from(SUPABASE_BUCKET)
+      .uploadToSignedUrl(path, token, file, {
+        upsert: false,
+        contentType: file.type || "application/octet-stream"
+      });
 
-    // 3) أنشئ رابطًا موقّتًا ليمر إلى الباك/الإدارة
-    const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 60*60);
-    proofUrl = signed.data?.signedUrl || "";
-    if(!proofUrl) throw new Error("تعذّر توليد رابط موقّت للملف");
+    if(up.error){
+      console.error("Supabase upload error:", up.error);
+      throw new Error(up.error.message || "فشل الرفع إلى Supabase");
+    }
+
+    // (اختياري) لو أردت رابطًا موقّتًا للمعاينة فقط، لا نرسله للخادم
+    // const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 3600);
+    // const previewUrl = signed.data?.signedUrl;
+
   }catch(err){
     console.error("Direct upload error:", err);
     status.textContent = "تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
     return;
   }
 
-  // 4) أرسل بيانات الشكوى
+  // 3) أرسل بيانات الشكوى للخادم — يَنتظر proofPath
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -419,35 +475,37 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     category: fd.get("category"),
     place: fd.get("place"),
     summary: fd.get("summary"),
-    proofUrl
+    proofPath // <-- مهم: هذا ما يطلبه الخادم الآن
   };
 
   try{
     const r = await fetch(`${FN_BASE}/submitComplaint`, {
-      method:"POST", headers: {"Content-Type":"application/json"},
+      method:"POST",
+      headers: { "Content-Type":"application/json" },
       body: JSON.stringify(payload)
     });
 
+    const txt = await r.text();
     if(!r.ok){
-      const t = await r.text();
-      status.textContent = "تعذّر إرسال الشكوى: " + t;
+      console.error("submitComplaint failed:", txt);
+      status.textContent = "تعذّر إرسال الشكوى: " + txt;
       return;
     }
 
-    const data = await r.json(); // { number, html_url }
+    const data = JSON.parse(txt); // { number, html_url }
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
 
-    // افتح تبويب تتبع الحالة وجهّز الرقم
+    // افتح تبويب تتبع الحالة
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
     if(tn){ tn.value = data.number; }
   }catch(err){
+    console.error(err);
     status.textContent = "تعذّر إرسال الشكوى. تحقّق من اتصالك.";
   }
 });
-
-/* إرسال التقرير كما هو */
+/* === إرسال التقرير === */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -469,18 +527,14 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
       method:"POST", headers: {"Content-Type":"application/json"},
       body: JSON.stringify(payload)
     });
-
-    if(!r.ok){
-      status.textContent = "تعذّر إرسال التقرير.";
-      return;
-    }
+    if(!r.ok){ status.textContent = "تعذّر إرسال التقرير."; return; }
 
     const data = await r.json(); // { number, html_url }
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
 
     // افتح تبويب تتبع الحالة
-    document.querySelector('.tab-btn[data-tab="statusTab"]').click();
+    showTab("statusTab");
     const tn = document.getElementById("trackNumber");
     if(tn){ tn.value = data.number; }
   }catch{
@@ -488,7 +542,7 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   }
 });
 
-/* تتبع الحالة */
+/* === تتبع الحالة === */
 document.getElementById("trackBtn").addEventListener("click", async ()=>{
   const num = Number(document.getElementById("trackNumber").value);
   const box = document.getElementById("trackResult");
@@ -518,12 +572,12 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
   }
 });
 
-/* ref= */
+/* === ref= لفتح ملف معيّن === */
 (function init(){
   const params = new URLSearchParams(location.search);
   const ref = params.get("ref");
   if(ref){
-    document.querySelector('.tab-btn[data-tab="complaintsListTab"]').click();
+    showTab("complaintsListTab");
     window.open(`https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/${ref}#new_comment_field`,"_blank");
   }
 })();
