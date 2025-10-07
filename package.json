@@ -1,0 +1,8 @@
+{
+  "type": "module",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.57.2",
+    "bcryptjs": "^3.0.2",
+    "busboy": "^1.6.0"
+  }
+}

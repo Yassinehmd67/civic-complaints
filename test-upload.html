@@ -1,0 +1,23 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>رفع اختبار</title>
+<h1>اختبار رفع إلى Supabase عبر Netlify Function</h1>
+<form id="f" enctype="multipart/form-data" method="post">
+  <input type="file" name="file" accept=".pdf,image/png,image/jpeg" required>
+  <button>رفع</button>
+</form>
+<pre id="out"></pre>
+<script>
+const FN = "/.netlify/functions/uploadProof";
+f.onsubmit = async (e)=>{
+  e.preventDefault();
+  out.textContent = "جارٍ الرفع...";
+  try {
+    const r = await fetch(FN, { method:"POST", body:new FormData(f) });
+    const t = await r.text();
+    out.textContent = t;
+  } catch(err) {
+    out.textContent = "خطأ: " + err.message;
+  }
+};
+</script>

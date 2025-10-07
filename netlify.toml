@@ -1,0 +1,14 @@
+# netlify.toml
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  external_node_modules = ["@supabase/supabase-js", "busboy", "bcryptjs"]
+  included_files = ["netlify/functions/**"]
+
+# CORS لكل الدوال
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"

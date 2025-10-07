@@ -1,0 +1,19 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Marrakesh",
+			"country": {
+				"code": "MA",
+				"name": "Morocco"
+			},
+			"subdivision": {
+				"code": "07",
+				"name": "Marrakesh-Safi"
+			},
+			"timezone": "Africa/Casablanca",
+			"latitude": 31.6348,
+			"longitude": -8.0025
+		},
+		"timestamp": 1759782746709
+	}
+}
