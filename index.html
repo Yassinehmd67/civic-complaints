@@ -29,21 +29,21 @@
     .sep{height:1px;background:#eee;margin:10px 0}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-    /* أزرار الهيدر الصغيرة يسار */
+    /* أزرار الهيدر */
     .nav-actions { display:flex;gap:8px;margin-top:8px;margin-inline-start:auto; }
     .nav-btn { padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#f9f9f9;font-size:0.9rem;cursor:pointer;text-decoration:none;color:#111;transition:.2s; }
     .nav-btn:hover { background:#111;color:#fff;border-color:#111; }
 
-    /* العنوان الرئيسي في الوسط داخل بطاقة أنيقة */
+    /* عنوان */
     .title-card { background:#f9f9f9;border:1px solid #ddd;border-radius:12px;padding:16px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);margin:0 auto 12px;text-align:center;width:100% }
     .title-card h1 { margin:0 0 6px;font-size:1.8rem;color:#0a0a0a }
     .title-card .muted { text-align:center;font-size:0.92rem;color:#555 }
 
-    /* العناوين الفرعية موحدة (يمين وبنفس المستوى) */
+    /* عناوين فرعية */
     .section-title { background:#f9f9f9;border:1px solid #ddd;border-radius:10px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 5px rgba(0,0,0,0.07);text-align:right }
     .section-title h2 { margin:0;font-size:1.4rem;color:#0a0a0a }
 
-    /* أيقونة تيلجرام العائمة + نبض */
+    /* تيلجرام */
     .telegram-fab { position:fixed;bottom:20px;left:20px;background:#0088cc;border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:pulse 1.5s infinite;z-index:999 }
     .telegram-fab:hover { background:#006fa1 }
     @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
@@ -74,7 +74,7 @@
     <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
   </section>
 
-  <!-- تبويب تتبع الحالة -->
+  <!-- تتبع الحالة -->
   <section id="statusTab" class="card" style="display:none">
     <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
     <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
@@ -145,13 +145,13 @@
     </form>
   </section>
 
-  <!-- تبويب الشكايات المنشورة -->
+  <!-- الشكايات المنشورة -->
   <section id="complaintsListTab" class="card" style="display:none">
     <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
     <div id="complaintsList" class="grid" aria-live="polite"></div>
   </section>
 
-  <!-- تبويب التقارير المنشورة -->
+  <!-- التقارير المنشورة -->
   <section id="reportsListTab" class="card" style="display:none">
     <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
     <div id="reportsList" class="grid" aria-live="polite"></div>
@@ -162,7 +162,7 @@
     <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
   </footer>
 
-<!-- أيقونة تيلجرام -->
+<!-- تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
     <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
@@ -170,20 +170,26 @@
 </a>
 
 <script type="module">
-/* === إعدادات مشروعك === */
+/* === إعدادات المشروع === */
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
-const FN_BASE    = "/.netlify/functions";
 
-/* === رفع مباشر إلى Supabase عبر توقيع الخادم === */
+/* دومين Netlify الخاص بك (للتوجيه حين نكون على GitHub Pages) */
+const NETLIFY_SITE = "https://delicate-maamoul-683849.netlify.app";
+
+/* قاعدة وظائف السيرفر: ديناميكية تعمل على Netlify وGitHub Pages */
+const FN_BASE = location.hostname.endsWith(".netlify.app")
+  ? "/.netlify/functions"
+  : `${NETLIFY_SITE}/.netlify/functions`;
+
+/* Supabase (عمومي) */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-/* قيم Supabase العامة (مسموح وضع anon في الواجهة) */
 const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWFlZmZoeWdwa3preWNoZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwOTY0MzgsImV4cCI6MjA3MjY3MjQzOH0.N1Bfhu3bdAfberMBe1aK2xXVxr0xK42hlTlo7mM4uWE";
 const SUPABASE_BUCKET = "proofs";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* التنقل بين التبويبات */
+/* تبويبات */
 const tabs = document.querySelectorAll(".tab-btn");
 tabs.forEach(btn=>btn.onclick=()=>{
   tabs.forEach(b=>b.classList.remove("active"));
@@ -218,7 +224,6 @@ function statusLabel(labels){
   if(has("pending")) return "⌛ قيد الاستلام";
   return "— غير محدد —";
 }
-/* تحصين XSS بسيط */
 function escapeHtml(s=''){
   return s.replace(/[&<>"'`=\/]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c]));
 }
@@ -274,18 +279,75 @@ function cardFor(issue, type){
   </article>`;
 }
 
-/* === (جديد) جلب المعتمَد عبر الدالة الوسيطة على Netlify === */
-async function fetchApprovedFromProxy(filters = {}) {
-  const params = new URLSearchParams();
-  if (filters.type)  params.set("type",  filters.type);
-  if (filters.topic) params.set("topic", filters.topic);
-  if (filters.city)  params.set("city",  filters.city);
+/* كاش بسيط بالمتصفح (60 ثانية) */
+function cacheGet(key, maxAgeMs=60000){
+  try{
+    const raw = sessionStorage.getItem(key);
+    if(!raw) return null;
+    const obj = JSON.parse(raw);
+    if(Date.now() - obj.t > maxAgeMs) return null;
+    return obj.v;
+  }catch{ return null }
+}
+function cacheSet(key, val){
+  try{ sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), v: val })); }catch{}
+}
 
-  const url = `${FN_BASE}/listApproved` + (params.toString() ? ("?" + params.toString()) : "");
-  const r = await fetch(url, { headers: { "Accept": "application/json" } });
-  if (!r.ok) throw new Error("Proxy error");
-  const data = await r.json(); // { ok, count, items: [...] }
-  return data.items || [];
+/* جلب ذكي لتقليل استدعاءات Netlify */
+async function fetchApprovedSmart(filters = {}) {
+  const onNetlify = location.hostname.endsWith(".netlify.app");
+  const cacheKey = "approved:" + JSON.stringify(filters) + ":" + (onNetlify?"netlify":"ghpages");
+  const cached = cacheGet(cacheKey);
+  if(cached) return cached;
+
+  let items = [];
+
+  if (onNetlify) {
+    // على Netlify: استخدم البروكسي (كاش + ETag على الخادم)
+    const params = new URLSearchParams();
+    if (filters.type)  params.set("type",  filters.type);
+    if (filters.topic) params.set("topic", filters.topic);
+    if (filters.city)  params.set("city",  filters.city);
+
+    const url = `${FN_BASE}/listApproved` + (params.toString() ? ("?" + params.toString()) : "");
+    const r = await fetch(url, { headers: { "Accept": "application/json" } });
+    if (!r.ok) throw new Error("Proxy error");
+    const data = await r.json(); // { ok, count, items }
+    items = data.items || [];
+  } else {
+    // على GitHub Pages: نضرب GitHub مباشرةً لتوفير اعتمادات Netlify
+    let page = 1;
+    while (true) {
+      const url = new URL(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`);
+      url.searchParams.set("state", "open");
+      url.searchParams.set("labels", "approved");
+      url.searchParams.set("per_page", "100");
+      url.searchParams.set("page", String(page));
+
+      const r = await fetch(url.toString(), { headers: { "Accept": "application/vnd.github+json" } });
+      if (!r.ok) break;
+      const batch = (await r.json()).filter(i => !i.pull_request);
+      items.push(...batch);
+      if (batch.length < 100) break;
+      page++;
+    }
+    const getVal = (labels, pfx) => {
+      const L = (labels||[]).find(l => (l.name||"").startsWith(pfx));
+      return L ? (L.name.split(":")[1]||"").trim() : "";
+    };
+    items = items.filter(i => {
+      const type  = getVal(i.labels, "type:");
+      const topic = getVal(i.labels, "topic:");
+      const city  = getVal(i.labels, "city:");
+      if (filters.type  && type  !== filters.type)  return false;
+      if (filters.topic && topic !== filters.topic) return false;
+      if (filters.city  && city  !== filters.city)  return false;
+      return true;
+    });
+  }
+
+  cacheSet(cacheKey, items);
+  return items;
 }
 
 /* عرض الشكايات */
@@ -293,7 +355,7 @@ async function renderComplaints(){
   const list = document.getElementById("complaintsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
   try{
-    const items = await fetchApprovedFromProxy({ type: "complaint" });
+    const items = await fetchApprovedSmart({ type: "complaint" });
     list.innerHTML = items.map(it=>cardFor(it,"complaint")).join("") || "<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
     bindCommentForms(list);
   }catch(e){
@@ -307,7 +369,7 @@ async function renderReports(){
   const list = document.getElementById("reportsList");
   list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
   try{
-    const items = await fetchApprovedFromProxy({ type: "report" });
+    const items = await fetchApprovedSmart({ type: "report" });
     list.innerHTML = items.map(it=>cardFor(it,"report")).join("") || "<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
     bindCommentForms(list);
   }catch(e){
@@ -368,7 +430,7 @@ async function upvote(issueNumber){
   }
 }
 
-/* === إرسال الشكوى: رفع مباشر إلى Supabase فقط === */
+/* إرسال الشكوى */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -378,18 +440,12 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   status.textContent = "جارٍ الرفع والتحقق…";
 
   const file = fd.get("proofFile");
-  if(!file || file.size===0){
-    status.textContent = "الملف الموقّع مطلوب.";
-    return;
-  }
-  if(file.size > 10*1024*1024){
-    status.textContent = "حجم الملف أكبر من 10MB.";
-    return;
-  }
+  if(!file || file.size===0){ status.textContent = "الملف الموقّع مطلوب."; return; }
+  if(file.size > 10*1024*1024){ status.textContent = "حجم الملف أكبر من 10MB."; return; }
 
   let proofUrl = "";
   try{
-    // 1) احصل على تذكرة رفع
+    // 1) تذكرة رفع من الخادم
     const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
       method:"POST", headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ mime: file.type || "application/pdf" })
@@ -400,12 +456,12 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     }
     const { path, token } = await tkRes.json();
 
-    // 2) ارفع الملف مباشرة بالتذكرة
+    // 2) الرفع المباشر لـ Supabase باستخدام التذكرة
     const up = await supabase.storage.from(SUPABASE_BUCKET)
       .uploadToSignedUrl(path, token, file, { upsert:false, contentType: file.type || "application/octet-stream" });
     if(up.error) throw up.error;
 
-    // 3) أنشئ رابطًا موقّتًا ليمر إلى الباك/الإدارة (لن يُحفظ للعامة)
+    // 3) توليد رابط موقّت (لن يُخزن علنًا)
     const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 60*60);
     proofUrl = signed.data?.signedUrl || "";
     if(!proofUrl) throw new Error("تعذّر توليد رابط موقّت للملف");
@@ -415,7 +471,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     return;
   }
 
-  // 4) أرسل بيانات الشكوى
+  // 4) إرسال بيانات الشكوى
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -451,7 +507,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   }
 });
 
-/* إرسال التقرير كما هو */
+/* إرسال التقرير */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
