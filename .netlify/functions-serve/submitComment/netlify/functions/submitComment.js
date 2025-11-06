@@ -25,81 +25,43 @@ __export(submitComment_exports, {
 module.exports = __toCommonJS(submitComment_exports);
 var config = { path: "/.netlify/functions/submitComment" };
 function cors(res) {
-  return {
-    ...res,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Methods": "POST,OPTIONS",
-      "Content-Type": "application/json"
-    }
-  };
-}
-var toJSON = (o) => JSON.stringify(o);
-function clean(s = "") {
-  return String(s).replace(/\s+/g, " ").trim();
+  return { ...res, headers: { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type" } };
 }
 async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
-  if (event.httpMethod !== "POST") {
-    return cors({ statusCode: 405, body: toJSON({ ok: false, error: "Method Not Allowed" }) });
-  }
-  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE } = process.env;
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-    return cors({ statusCode: 500, body: toJSON({ ok: false, error: "Missing Supabase env vars" }) });
+  if (event.httpMethod !== "POST") return cors({ statusCode: 405, body: "Method Not Allowed" });
+  const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN } = process.env;
+  if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
+    return cors({ statusCode: 500, body: "Missing server env" });
   }
   try {
-    const payload = JSON.parse(event.body || "{}");
-    let { issueNumber, fullName, comment } = payload;
-    issueNumber = Number(issueNumber);
-    fullName = clean(fullName);
-    comment = clean(comment);
+    const { issueNumber, fullName, comment } = JSON.parse(event.body || "{}");
     const errs = [];
-    if (!Number.isFinite(issueNumber) || issueNumber <= 0) errs.push("\u0631\u0642\u0645 \u0627\u0644\u0645\u0644\u0641 \u063A\u064A\u0631 \u0635\u0627\u0644\u062D.");
-    if (!fullName || fullName.length < 8 || fullName.length > 80) errs.push("\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644 \u0645\u0637\u0644\u0648\u0628 (8\u201380 \u062D\u0631\u0641\u064B\u0627).");
-    if (!comment || comment.length < 40) errs.push("\u0627\u0644\u062A\u0639\u0644\u064A\u0642 \u0642\u0635\u064A\u0631 \u062C\u062F\u064B\u0627. \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u062F\u0646\u0649 40 \u062D\u0631\u0641\u064B\u0627.");
-    if (comment.length > 2e3) errs.push("\u0627\u0644\u062A\u0639\u0644\u064A\u0642 \u0637\u0648\u064A\u0644 \u062C\u062F\u064B\u0627. \u0627\u0644\u062D\u062F \u0627\u0644\u0623\u0642\u0635\u0649 2000 \u062D\u0631\u0641.");
-    if (errs.length) {
-      return cors({ statusCode: 422, body: toJSON({ ok: false, error: errs.join(" ") }) });
-    }
-    const insertRow = {
-      issue_number: issueNumber,
-      full_name: fullName,
-      comment
-    };
-    const url = `${SUPABASE_URL}/rest/v1/pending_comments`;
-    const res = await fetch(url, {
+    if (!issueNumber) errs.push("\u0631\u0642\u0645 \u0627\u0644\u0639\u0646\u0635\u0631 \u0645\u0641\u0642\u0648\u062F.");
+    if (!fullName || fullName.trim().length < 8) errs.push("\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644 \u0645\u0637\u0644\u0648\u0628.");
+    if (!comment || comment.trim().length < 40) errs.push("\u0627\u0644\u062A\u0639\u0644\u064A\u0642 \u0642\u0635\u064A\u0631 (\u2265 40 \u062D\u0631\u0641\u064B\u0627).");
+    if (errs.length) return cors({ statusCode: 422, body: errs.join(" ") });
+    const body = `**\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0643\u0627\u0645\u0644:** ${fullName}
+
+${comment}
+
+_(\u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u0627\u0644\u0645\u0631\u0627\u062C\u0639\u0629)_`;
+    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issueNumber}/comments`, {
       method: "POST",
       headers: {
-        "apikey": SUPABASE_SERVICE_ROLE,
-        "Authorization": `Bearer ${SUPABASE_SERVICE_ROLE}`,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
+        "Authorization": `Bearer ${GITHUB_TOKEN}`,
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(insertRow)
+      body: JSON.stringify({ body })
     });
     if (!res.ok) {
-      const text = await res.text();
-      return cors({
-        statusCode: 500,
-        body: toJSON({ ok: false, error: `Supabase error: ${text || res.status}` })
-      });
+      const t = await res.text();
+      return cors({ statusCode: 500, body: `GitHub error: ${t}` });
     }
-    const rows = await res.json();
-    const row = Array.isArray(rows) ? rows[0] : rows;
-    return cors({
-      statusCode: 200,
-      body: toJSON({
-        ok: true,
-        id: row?.id || null,
-        message: "\u062A\u0645 \u0627\u0633\u062A\u0644\u0627\u0645 \u0627\u0644\u062A\u0639\u0644\u064A\u0642 \u0648\u064A\u062D\u062A\u0627\u062C \u0644\u0645\u0631\u0627\u062C\u0639\u0629 \u0627\u0644\u0645\u062F\u064A\u0631 \u0642\u0628\u0644 \u0627\u0644\u0646\u0634\u0631."
-      })
-    });
+    return cors({ statusCode: 200, body: "OK" });
   } catch (e) {
-    return cors({
-      statusCode: 500,
-      body: toJSON({ ok: false, error: e?.message || String(e) })
-    });
+    return cors({ statusCode: 500, body: String(e.message || e) });
   }
 }
 // Annotate the CommonJS export names for ESM import in node:

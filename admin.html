@@ -43,6 +43,12 @@
       <h3 id="currentTitle" style="margin:6px 0 0"></h3>
       <div id="currentMeta" class="muted"></div>
       <p id="currentExcerpt" style="margin:8px 0 0"></p>
+
+      <!-- أزرار إدارية إضافية -->
+      <div class="row" style="margin-top:8px">
+        <button id="proofBtn" title="إظهار رابط المرفق الداخلي">عرض المرفق الداخلي</button>
+        <span id="proofStatus" class="muted tiny"></span>
+      </div>
     </div>
 
     <hr style="border:none;height:1px;background:#eee;margin:14px 0">
@@ -66,8 +72,8 @@
   </div>
 
 <script>
-/* === عدّل الرابط لاسم موقعك إن تغيّر === */
-const FN_BASE = "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+/* === استخدم مسار وظائف نسبي ليعمل محليًا وعلى Netlify === */
+const FN_BASE = "/.netlify/functions";
 
 /* مساعدات */
 function prettyStatus(labels){
@@ -99,6 +105,9 @@ const newStatusEl = document.getElementById("newStatus");
 const adminPasswordEl = document.getElementById("adminPassword");
 const applyBtn = document.getElementById("applyBtn");
 const statusEl = document.getElementById("status");
+
+const proofBtn = document.getElementById("proofBtn");
+const proofStatus = document.getElementById("proofStatus");
 
 /* تحسينات UX: Enter = استعلام */
 issueNumberEl.addEventListener("keydown", (e)=>{
@@ -195,7 +204,8 @@ applyBtn.addEventListener("click", async ()=>{
 
     statusEl.textContent = "✅ تم التحديث بنجاح.";
     statusEl.className = "success";
-    adminPasswordEl.value = "";
+    // يمكن مسح كلمة السر بعد النجاح أو إبقاءها لاستخدام زر المرفق
+    // adminPasswordEl.value = "";
 
     // تحديث صندوق الحالة الحالية مباشرة
     checkBtn.click();
@@ -204,6 +214,47 @@ applyBtn.addEventListener("click", async ()=>{
     statusEl.className = "error";
   }finally{
     applyBtn.disabled = false;
+  }
+});
+
+/* زر: عرض المرفق الداخلي (يستدعي getProofLink) */
+proofBtn.addEventListener("click", async ()=>{
+  const number = Number(issueNumberEl.value);
+  const pass = adminPasswordEl.value; // أو استخدم X-Admin-Key في الهيدر بدل كلمة السر
+  if(!number){
+    proofStatus.textContent = "أدخل رقم ملف صالح أولًا.";
+    proofStatus.className = "error tiny";
+    return;
+  }
+  proofBtn.disabled = true;
+  proofStatus.textContent = "جارٍ توليد الرابط…";
+  proofStatus.className = "muted tiny";
+  try{
+    const r = await fetch(`${FN_BASE}/getProofLink`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // لاستخدام مفتاح ثابت بدل كلمة السر (اختياري):
+        // "X-Admin-Key": "ضع_القيمة_السرية_إن_استخدمت_ADMIN_KEY"
+      },
+      body: JSON.stringify({ issueNumber: number, password: pass })
+    });
+    const t = await r.text();
+    if(!r.ok){ throw new Error(t || r.statusText); }
+    const d = safeJson(t) || {};
+    if(d.signedUrl){
+      proofStatus.textContent = "تم إنشاء الرابط. يُفتح في لسان جديد.";
+      proofStatus.className = "success tiny";
+      window.open(d.signedUrl, "_blank", "noopener");
+    }else{
+      proofStatus.textContent = "تعذّر إنشاء الرابط.";
+      proofStatus.className = "error tiny";
+    }
+  }catch(e){
+    proofStatus.textContent = "تعذّر إنشاء الرابط: " + (e.message||e);
+    proofStatus.className = "error tiny";
+  }finally{
+    proofBtn.disabled = false;
   }
 });
 

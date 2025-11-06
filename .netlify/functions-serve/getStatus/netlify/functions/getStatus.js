@@ -63,10 +63,7 @@ async function handler(event) {
     });
     if (!res.ok) {
       const t = await res.text();
-      return cors({
-        statusCode: res.status === 404 ? 404 : 500,
-        body: JSON.stringify({ error: t || "not found" })
-      });
+      return cors({ statusCode: res.status === 404 ? 404 : 500, body: JSON.stringify({ error: t || "not found" }) });
     }
     const issue = await res.json();
     const labels = issue.labels || [];
@@ -86,6 +83,7 @@ async function handler(event) {
     const payload = {
       number: issue.number,
       title: issue.title,
+      html_url: issue.html_url,
       created_at: issue.created_at,
       labels: labels.map((l) => ({ name: l.name })),
       type,
@@ -94,7 +92,6 @@ async function handler(event) {
       display,
       comments,
       reactions
-      // ⚠️ لا نُعيد html_url ولا أي روابط خارجية
     };
     return cors({ statusCode: 200, body: JSON.stringify(payload) });
   } catch (e) {
