@@ -1,4 +1,3 @@
-// netlify/functions/getUploadTicket.js
 import { createClient } from "@supabase/supabase-js";
 
 export const config = { path: "/.netlify/functions/getUploadTicket" };
@@ -17,9 +16,9 @@ function cors(res) {
 
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_BUCKET } = process.env;
 
-// الأنواع المسموح بها وحجم 10MB (للاتساق مع الخلفيات الأخرى)
+// الأنواع المسموح بها وحجم 10MB
 const ALLOWED = new Set(["application/pdf", "image/png", "image/jpeg"]);
-const MAX_BYTES = 10 * 1024 * 1024; // 10MB (معلومة فقط هنا)
+const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function handler(event) {
   try {
@@ -40,7 +39,6 @@ export async function handler(event) {
       });
     }
 
-    // مدخلات اختيارية من الواجهة: mime واسم مقترح (لا نستخدم الاسم كما هو حفاظاً على الأمان)
     const { mime = "application/pdf" } = JSON.parse(event.body || "{}");
 
     // تحقّق النوع
@@ -60,16 +58,15 @@ export async function handler(event) {
         ? "png"
         : "jpg";
 
-    // مسار آمن داخل البكت
-    const objectPath = `proofs/${Date.now()}-${Math.random()
+    // ✅ مسار داخل الـbucket فقط (بدون اسم الـbucket)
+    const OBJECT_PREFIX = "incoming/"; // يمكن تغييره لمجلد آخر
+    const objectPath = `${OBJECT_PREFIX}${Date.now()}-${Math.random()
       .toString(36)
       .slice(2)}.${ext}`;
 
-    // إنشاء عميل Supabase باستخدام مفتاح الدور الخدمي (server-side فقط)
+    // إنشاء عميل Supabase باستخدام مفتاح الدور الخدمي
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
-    // ⚠️ بعض الإصدارات لا تدعم تمرير مدة صلاحية هنا — سنحاول 30 دقيقة، وإن تجاهلتها المكتبة فستستخدم الافتراضي.
-    // إن كان إصدارك لا يقبل وسيطاً ثانياً، سيُهمل بدون مشاكل.
     const THIRTY_MINUTES = 60 * 30;
     const { data, error } = await supabase.storage
       .from(SUPABASE_BUCKET)
@@ -83,17 +80,15 @@ export async function handler(event) {
       });
     }
 
-    // حضّر رابط PUT الجاهز للرفع من المتصفح + التوكن
+    // رابط PUT + التوكن
     const uploadUrl = `${SUPABASE_URL}/storage/v1/object/upload/sign/${objectPath}`;
 
-    // معلومات إرشادية للواجهة
     const resp = {
-      path: objectPath,            // خزّنه مع الشكوى (لا حاجة لحفظ رابط مؤقّت)
-      token: data?.token,          // ضعه في هيدر Authorization عند الرفع
-      uploadUrl,                   // هذا هو endpoint الذي سترفع عليه مباشرة
-      contentType: mime,           // استخدمه كهيدر Content-Type في طلب PUT
-      maxBytes: MAX_BYTES,         // للواجهة فقط (تذكير بالحجم)
-      // وقت الانتهاء تقديري: الآن + 30 دقيقة (قد يختلف فعلياً حسب إصدار المكتبة)
+      path: objectPath,
+      token: data?.token,
+      uploadUrl,
+      contentType: mime,
+      maxBytes: MAX_BYTES,
       expiresAt: Date.now() + THIRTY_MINUTES * 1000,
     };
 
