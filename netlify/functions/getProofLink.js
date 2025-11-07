@@ -4,91 +4,112 @@ import { createClient } from "@supabase/supabase-js";
 
 export const config = { path: "/.netlify/functions/getProofLink" };
 
+/* CORS موحّد */
 function cors(res) {
   return {
     ...res,
     headers: {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Admin-Key",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "POST,OPTIONS",
       "Content-Type": "application/json",
     },
   };
 }
 
+/* بيئة التشغيل */
 const {
+  ADMIN_HASH,                 // هاش bcrypt لكلمة سر المشرف
   SUPABASE_URL,
-  SUPABASE_SERVICE_ROLE,
-  SUPABASE_BUCKET,
-  SUPABASE_PROOFS_TABLE, // اختياري
-  ADMIN_HASH,
-  ADMIN_KEY,             // اختياري: مفتاح ثابت عبر الهيدر
+  SUPABASE_SERVICE_ROLE,      // مفتاح service role (سِرّي)
+  SUPABASE_BUCKET,            // مثال: proofs
+  SUPABASE_PROOFS_TABLE,      // مثال: complaint_proofs
 } = process.env;
 
-const PROOFS_TABLE = SUPABASE_PROOFS_TABLE || "complaint_proofs";
+/* أمان: دقّق السلسلة وأزل أي بادئة bucket/ */
+function normalizePath(p = "") {
+  let path = String(p || "").replace(/^\/+/, "");
+  // لو المسار جاء بصيغة "proofs/..." قصّه إلى ما بعد اسم البكت
+  if (SUPABASE_BUCKET && path.startsWith(SUPABASE_BUCKET + "/")) {
+    path = path.slice(SUPABASE_BUCKET.length + 1);
+  }
+  return path;
+}
 
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
-  if (event.httpMethod !== "POST") return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
+  if (event.httpMethod !== "POST") {
+    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
+  }
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
-    return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing Supabase env vars" }) });
+  // فحص المتغيرات
+  if (!ADMIN_HASH || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
+    return cors({ statusCode: 500, body: JSON.stringify({ error: "Server env missing" }) });
   }
-  if (!ADMIN_HASH && !ADMIN_KEY) {
-    return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing admin secret (ADMIN_HASH or ADMIN_KEY)" }) });
-  }
+  const table = SUPABASE_PROOFS_TABLE || "complaint_proofs";
 
   try {
-    const { issueNumber, password } = JSON.parse(event.body || "{}");
-    const n = Number(issueNumber);
-    if (!n || !Number.isFinite(n) || n <= 0) {
-      return cors({ statusCode: 422, body: JSON.stringify({ error: "invalid issueNumber" }) });
+    // حمولة الطلب: { issueNumber, password, expiresIn? }
+    const { issueNumber, password, expiresIn } = JSON.parse(event.body || "{}");
+
+    // تحقق مدخلات
+    const num = Number(issueNumber);
+    if (!Number.isFinite(num) || num <= 0) {
+      return cors({ statusCode: 422, body: JSON.stringify({ error: "issueNumber غير صالح" }) });
+    }
+    if (!password) {
+      return cors({ statusCode: 422, body: JSON.stringify({ error: "كلمة السر مطلوبة" }) });
     }
 
-    // تحقّق إداري: كلمة سر (Bcrypt) أو مفتاح ثابت بالهيدر
-    const headerKey = event.headers["x-admin-key"] || event.headers["X-Admin-Key"];
-    let isAdmin = false;
-
-    // تباطؤ بسيط ضد التخمين
-    await new Promise(r => setTimeout(r, 150));
-
-    if (ADMIN_KEY && headerKey && headerKey === ADMIN_KEY) {
-      isAdmin = true;
-    } else if (ADMIN_HASH && password) {
-      isAdmin = await bcrypt.compare(String(password), String(ADMIN_HASH));
+    // تحقق كلمة السر (Bcrypt)
+    const ok = await bcrypt.compare(String(password), String(ADMIN_HASH));
+    if (!ok) {
+      return cors({ statusCode: 403, body: JSON.stringify({ error: "كلمة السر غير صحيحة" }) });
     }
 
-    if (!isAdmin) {
-      return cors({ statusCode: 401, body: JSON.stringify({ error: "unauthorized" }) });
-    }
+    // Supabase عميل بصلاحية Service Role
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
-    const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
-
-    // جلب المسار الخاص للمرفق
-    const { data, error } = await sb
-      .from(PROOFS_TABLE)
+    // جلب المسار من الجدول
+    const { data: row, error: qErr } = await supabase
+      .from(table)
       .select("proof_path")
-      .eq("issue_number", n)
-      .single();
+      .eq("issue_number", num)
+      .maybeSingle();
 
-    if (error || !data?.proof_path) {
-      return cors({ statusCode: 404, body: JSON.stringify({ error: "proof not found for this issue" }) });
+    if (qErr) {
+      return cors({ statusCode: 500, body: JSON.stringify({ error: `DB error: ${qErr.message}` }) });
+    }
+    if (!row || !row.proof_path) {
+      return cors({ statusCode: 404, body: JSON.stringify({ error: "لا يوجد ملف مرتبط بهذه الشكوى" }) });
     }
 
-    // توليد رابط موقّت (30 دقيقة)
-    const EXPIRES = 60 * 30;
-    const { data: sdata, error: serror } = await sb
+    const objectPath = normalizePath(row.proof_path);
+    if (!objectPath) {
+      return cors({ statusCode: 500, body: JSON.stringify({ error: "مسار الملف غير صالح" }) });
+    }
+
+    // مدة الصلاحية (ثوانٍ) — افتراضي 10 دقائق
+    const ttl = Math.max(60, Math.min(60 * 60, Number(expiresIn) || 600));
+
+    // توليد رابط مؤقّت من التخزين
+    const { data: signed, error: sErr } = await supabase
       .storage
       .from(SUPABASE_BUCKET)
-      .createSignedUrl(data.proof_path, EXPIRES);
+      .createSignedUrl(objectPath, ttl);
 
-    if (serror || !sdata?.signedUrl) {
-      return cors({ statusCode: 500, body: JSON.stringify({ error: "failed to create signed url" }) });
+    if (sErr) {
+      return cors({ statusCode: 500, body: JSON.stringify({ error: `sign error: ${sErr.message}` }) });
     }
 
+    const expiresAt = Date.now() + ttl * 1000;
     return cors({
       statusCode: 200,
-      body: JSON.stringify({ ok: true, issueNumber: n, signedUrl: sdata.signedUrl, expiresIn: EXPIRES }),
+      body: JSON.stringify({
+        ok: true,
+        url: signed?.signedUrl || "",
+        expiresAt,
+      }),
     });
   } catch (e) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: e.message || String(e) }) });
