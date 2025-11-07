@@ -209,7 +209,7 @@ function labelValue(labels, prefix){
     const n = (x.name||x).toString();
     return n.startsWith(prefix);
   });
-  return l ? (l.name||l).split(":")[1].trim() : "";
+  return l ? (l.name||l).split(":)[1].trim() : "";
 }
 function summaryFromBody(body=""){
   const line = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
@@ -303,7 +303,7 @@ async function fetchApprovedSmart(filters = {}) {
   let items = [];
 
   if (onNetlify) {
-    // على Netlify: استخدم البروكسي (كاش + ETag على الخادم)
+    // على Netlify: استخدم البروكسي (إن أضفته لاحقًا)
     const params = new URLSearchParams();
     if (filters.type)  params.set("type",  filters.type);
     if (filters.topic) params.set("topic", filters.topic);
@@ -430,7 +430,7 @@ async function upvote(issueNumber){
   }
 }
 
-/* إرسال الشكوى */
+/* === إرسال الشكوى: رفع مباشر + إرسال proofPath فقط === */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -443,11 +443,12 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   if(!file || file.size===0){ status.textContent = "الملف الموقّع مطلوب."; return; }
   if(file.size > 10*1024*1024){ status.textContent = "حجم الملف أكبر من 10MB."; return; }
 
-  let proofUrl = "";
+  let proofPath = "";
   try{
     // 1) تذكرة رفع من الخادم
     const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-      method:"POST", headers:{"Content-Type":"application/json"},
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
       body: JSON.stringify({ mime: file.type || "application/pdf" })
     });
     if(!tkRes.ok){
@@ -456,22 +457,23 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     }
     const { path, token } = await tkRes.json();
 
-    // 2) الرفع المباشر لـ Supabase باستخدام التذكرة
+    // 2) الرفع المباشر فقط (بدون createSignedUrl من الواجهة)
     const up = await supabase.storage.from(SUPABASE_BUCKET)
-      .uploadToSignedUrl(path, token, file, { upsert:false, contentType: file.type || "application/octet-stream" });
+      .uploadToSignedUrl(path, token, file, {
+        upsert:false,
+        contentType: file.type || "application/octet-stream"
+      });
     if(up.error) throw up.error;
 
-    // 3) توليد رابط موقّت (لن يُخزن علنًا)
-    const signed = await supabase.storage.from(SUPABASE_BUCKET).createSignedUrl(path, 60*60);
-    proofUrl = signed.data?.signedUrl || "";
-    if(!proofUrl) throw new Error("تعذّر توليد رابط موقّت للملف");
+    // نمرّر المسار للخادم
+    proofPath = path;
   }catch(err){
     console.error("Direct upload error:", err);
     status.textContent = "تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
     return;
   }
 
-  // 4) إرسال بيانات الشكوى
+  // 3) إرسال بيانات الشكوى (نرسل المسار فقط)
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -479,7 +481,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     category: fd.get("category"),
     place: fd.get("place"),
     summary: fd.get("summary"),
-    proofUrl
+    proofPath
   };
 
   try{
