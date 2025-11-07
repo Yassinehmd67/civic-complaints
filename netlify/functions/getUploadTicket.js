@@ -3,59 +3,85 @@ import { createClient } from "@supabase/supabase-js";
 
 export const config = { path: "/.netlify/functions/getUploadTicket" };
 
-// أصل افتراضي؛ يمكنك ضبطه من المتغيرات أو إبقاءه *
-const ALLOWED_ORIGIN = process.env.CORS_ORIGIN || "*";
+/* =========================
+   CORS مبسّط وموحّد لكل الردود
+   ========================= */
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*", // لا نستخدم كوكيز، لذا * آمنة هنا
+  "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, apikey",
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
+  "Content-Type": "application/json",
+};
 
-function corsHeaders(origin) {
-  // إن استخدمت نطاقًا محددًا، أعد نفس الأصل الوارد؛ وإلا استخدم *
-  const allowOrigin = (ALLOWED_ORIGIN === "*") ? "*" : (origin || ALLOWED_ORIGIN);
-  return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Vary": "Origin",
-    "Access-Control-Allow-Headers": "content-type, authorization, x-client-info, apikey",
-    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
-    "Access-Control-Max-Age": "86400",
-    "Content-Type": "application/json",
-  };
+function withCors(res) {
+  return { ...res, headers: { ...(res.headers || {}), ...CORS_HEADERS } };
 }
 
-function cors(res, origin) {
-  return { ...res, headers: { ...(res.headers||{}), ...corsHeaders(origin) } };
-}
-
+/* =========================
+   المتغيرات البيئية
+   ========================= */
 const { SUPABASE_URL, SUPABASE_SERVICE_ROLE, SUPABASE_BUCKET } = process.env;
 
+// الأنواع المسموح بها وحجم 10MB
 const ALLOWED = new Set(["application/pdf", "image/png", "image/jpeg"]);
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 10 * 1024 * 1024; // 10MB
 
 export async function handler(event) {
-  const origin = event.headers?.origin || event.headers?.Origin || "";
-  // ✅ ردّ الـ preflight
+  /* ردّ الـ preflight دائمًا مع رؤوس CORS */
   if (event.httpMethod === "OPTIONS") {
-    return cors({ statusCode: 204, body: "" }, origin);
+    return withCors({ statusCode: 200, body: "" });
   }
+
   if (event.httpMethod !== "POST") {
-    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) }, origin);
+    return withCors({
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" }),
+    });
   }
 
   try {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
-      return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing Supabase env vars" }) }, origin);
+      return withCors({
+        statusCode: 500,
+        body: JSON.stringify({ error: "Missing Supabase env vars" }),
+      });
     }
 
+    // مدخلات اختيارية من الواجهة: نوع الملف
     const { mime = "application/pdf" } = JSON.parse(event.body || "{}");
+
+    // تحقّق النوع
     if (!ALLOWED.has(mime)) {
-      return cors({ statusCode: 415, body: JSON.stringify({ error: "نوع الملف غير مسموح. المسموح: PDF/PNG/JPG" }) }, origin);
+      return withCors({
+        statusCode: 415,
+        body: JSON.stringify({
+          error: "نوع الملف غير مسموح. المسموح: PDF/PNG/JPG",
+        }),
+      });
     }
 
-    const ext = mime === "application/pdf" ? "pdf" : (mime === "image/png" ? "png" : "jpg");
+    const ext =
+      mime === "application/pdf"
+        ? "pdf"
+        : mime === "image/png"
+        ? "png"
+        : "jpg";
 
-    // مسار داخل الـbucket فقط
-    const OBJECT_PREFIX = "incoming/";
-    const objectPath = `${OBJECT_PREFIX}${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    /* =========================
+       ✅ مسار داخل الـbucket فقط (بدون اسم الـbucket)
+       لمنع تكرار proofs/proofs في العنوان
+       ========================= */
+    const OBJECT_PREFIX = "incoming/"; // يمكن تغييره
+    const objectPath = `${OBJECT_PREFIX}${Date.now()}-${Math.random()
+      .toString(36)
+      .slice(2)}.${ext}`;
 
+    // إنشاء عميل Supabase باستخدام مفتاح الدور الخدمي
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
 
+    // نحاول تذكرة رفع صالحة لـ 30 دقيقة
     const THIRTY_MINUTES = 60 * 30;
     const { data, error } = await supabase.storage
       .from(SUPABASE_BUCKET)
@@ -63,22 +89,31 @@ export async function handler(event) {
 
     if (error) {
       console.error("[SIGNED UPLOAD URL ERROR]", error);
-      return cors({ statusCode: 500, body: JSON.stringify({ error: error.message }) }, origin);
+      return withCors({
+        statusCode: 500,
+        body: JSON.stringify({ error: error.message }),
+      });
     }
 
+    // Endpoint الرفع المباشر (PUT) + التوكن
     const uploadUrl = `${SUPABASE_URL}/storage/v1/object/upload/sign/${objectPath}`;
+
+    // معلومات تُعاد للواجهة
     const resp = {
-      path: objectPath,
-      token: data?.token,
-      uploadUrl,
-      contentType: mime,
-      maxBytes: MAX_BYTES,
+      path: objectPath,       // خزّنه مع الشكوى (على الخادم فقط)
+      token: data?.token,     // يوضع في Authorization عند الرفع
+      uploadUrl,              // Endpoint الرفع المباشر
+      contentType: mime,      // استخدمه كـ Content-Type
+      maxBytes: MAX_BYTES,    // تذكير للواجهة
       expiresAt: Date.now() + THIRTY_MINUTES * 1000,
     };
 
-    return cors({ statusCode: 200, body: JSON.stringify(resp) }, origin);
+    return withCors({ statusCode: 200, body: JSON.stringify(resp) });
   } catch (err) {
     console.error("[getUploadTicket ERROR]", err);
-    return cors({ statusCode: 500, body: JSON.stringify({ error: err.message || String(err) }) }, origin);
+    return withCors({
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message || String(err) }),
+    });
   }
 }
