@@ -62,16 +62,18 @@
     <a id="toComplaints" class="nav-btn">➕ شكوى</a>
     <a id="toReports" class="nav-btn">📑 تقرير</a>
     <a href="about.html" class="nav-btn">ℹ️ حول المنصة</a>
+    <a id="toDonations" class="nav-btn">💙 التبرعات</a>
   </nav>
 </header>
 
-  <!-- تبويبات -->
+  <!-- التبويبات -->
   <section class="tabs">
     <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
     <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
     <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
     <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
     <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
+    <button class="tab-btn" data-tab="donationsTab">💙 التبرعات</button>
   </section>
 
   <!-- تتبع الحالة -->
@@ -157,6 +159,49 @@
     <div id="reportsList" class="grid" aria-live="polite"></div>
   </section>
 
+  <!-- تبويب التبرعات -->
+  <section id="donationsTab" class="card" style="display:none">
+    <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
+
+    <p class="muted">
+      هذه المنصة مشروع مدني غير ربحي. التبرعات تُستخدم لتغطية المصاريف التقنية (الاستضافة، التخزين، أسماء النطاقات)
+      ولدعم التطوير المستمر وإضافة خصائص جديدة. مساهمتك تساعد في إبقاء المنصة شغالة، سريعة، وآمنة للجميع.
+    </p>
+
+    <div class="card" style="margin-top:10px">
+      <h3 style="margin:0 0 6px">التبرع عبر <b>البريد بنك</b></h3>
+      <div class="row" style="align-items: center">
+        <div class="badge">رقم الحساب</div>
+        <code id="bank-acc" style="user-select:all">9408915</code>
+        <button class="pill" onclick="copyText('#bank-acc')">نسخ</button>
+      </div>
+      <div class="row" style="margin-top:8px;align-items: center">
+        <div class="badge">اسم صاحب الحساب</div>
+        <code id="bank-name" style="user-select:all">yassine iboun</code>
+        <button class="pill" onclick="copyText('#bank-name')">نسخ</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h3 style="margin:0 0 6px">التبرع عبر <b>USDT (BEP20)</b></h3>
+      <div class="row" style="align-items: center">
+        <div class="badge">العنوان</div>
+        <code id="usdt-bep20" style="word-break:break-all;user-select:all">
+          0xE55C8cbBEb6c40b7ea18e0D418495267b487978e
+        </code>
+        <button class="pill" onclick="copyText('#usdt-bep20')">نسخ</button>
+      </div>
+      <p class="muted" style="margin-top:8px">
+        تنبيه: الرجاء التأكد من اختيار شبكة <b>BEP20</b> عند التحويل.
+      </p>
+    </div>
+
+    <div class="hint">
+      سننشر لاحقًا ملخصات شفافية دورية توضح أوجه الصرف (استضافة/تطوير) لضمان الثقة العامة.
+      شكرًا لدعمك! 💙
+    </div>
+  </section>
+
   <div class="sep"></div>
   <footer class="muted">
     <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
@@ -174,10 +219,10 @@
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
 
-/* دومين Netlify الخاص بك (للتوجيه حين نكون على GitHub Pages) */
+/* دومين Netlify (عند التصفح من GitHub Pages) */
 const NETLIFY_SITE = "https://delicate-maamoul-683849.netlify.app";
 
-/* قاعدة وظائف السيرفر: ديناميكية تعمل على Netlify وGitHub Pages */
+/* قاعدة وظائف السيرفر: ديناميكية */
 const FN_BASE = location.hostname.endsWith(".netlify.app")
   ? "/.netlify/functions"
   : `${NETLIFY_SITE}/.netlify/functions`;
@@ -194,7 +239,7 @@ const tabs = document.querySelectorAll(".tab-btn");
 tabs.forEach(btn=>btn.onclick=()=>{
   tabs.forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
-  ["complaintTab","reportTab","complaintsListTab","reportsListTab","statusTab"].forEach(id=>{
+  ["complaintTab","reportTab","complaintsListTab","reportsListTab","statusTab","donationsTab"].forEach(id=>{
     document.getElementById(id).style.display = (btn.dataset.tab===id) ? "" : "none";
   });
   if(btn.dataset.tab==="complaintsListTab") renderComplaints();
@@ -202,6 +247,8 @@ tabs.forEach(btn=>btn.onclick=()=>{
 });
 document.getElementById("toComplaints").onclick = ()=>document.querySelector('.tab-btn[data-tab="complaintTab"]').click();
 document.getElementById("toReports").onclick   = ()=>document.querySelector('.tab-btn[data-tab="reportTab"]').click();
+const toDon = document.getElementById("toDonations");
+if(toDon){ toDon.onclick = ()=>document.querySelector('.tab-btn[data-tab="donationsTab"]').click(); }
 
 /* أدوات مساعدة */
 function labelValue(labels, prefix){
@@ -229,6 +276,19 @@ function statusLabel(labels){
 }
 function escapeHtml(s=''){
   return s.replace(/[&<>"'`=\/]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c]));
+}
+function copyText(selector){
+  const el = document.querySelector(selector);
+  if(!el) return;
+  const txt = (el.textContent || el.value || "").trim();
+  if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>{ alert("تم النسخ ✅"); }, ()=>{
+    const ta = document.createElement("textarea");
+    ta.value = txt; document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); alert("تم النسخ ✅"); }
+    catch { alert("تعذّر النسخ، انسخ يدويًا."); }
+    finally { document.body.removeChild(ta); }
+  });
 }
 
 /* بطاقة عنصر */
@@ -282,7 +342,7 @@ function cardFor(issue, type){
   </article>`;
 }
 
-/* كاش بسيط بالمتصفح (60 ثانية) */
+/* كاش بسيط (60 ثانية) */
 function cacheGet(key, maxAgeMs=60000){
   try{
     const raw = sessionStorage.getItem(key);
@@ -296,7 +356,7 @@ function cacheSet(key, val){
   try{ sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), v: val })); }catch{}
 }
 
-/* جلب ذكي لتقليل استدعاءات Netlify */
+/* جلب approved بذكاء */
 async function fetchApprovedSmart(filters = {}) {
   const onNetlify = location.hostname.endsWith(".netlify.app");
   const cacheKey = "approved:" + JSON.stringify(filters) + ":" + (onNetlify?"netlify":"ghpages");
@@ -306,7 +366,7 @@ async function fetchApprovedSmart(filters = {}) {
   let items = [];
 
   if (onNetlify) {
-    // على Netlify: استخدم البروكسي (إن أضفته لاحقًا)
+    // لو أضفت لاحقًا listApproved كوكيل
     const params = new URLSearchParams();
     if (filters.type)  params.set("type",  filters.type);
     if (filters.topic) params.set("topic", filters.topic);
@@ -318,7 +378,7 @@ async function fetchApprovedSmart(filters = {}) {
     const data = await r.json(); // { ok, count, items }
     items = data.items || [];
   } else {
-    // على GitHub Pages: نضرب GitHub مباشرةً لتوفير اعتمادات Netlify
+    // GitHub مباشرة من GitHub Pages
     let page = 1;
     while (true) {
       const url = new URL(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`);
@@ -337,7 +397,7 @@ async function fetchApprovedSmart(filters = {}) {
     const getVal = (labels, pfx) => {
       const L = (labels||[]).find(l => (l.name||"").startsWith(pfx));
       return L ? (L.name.split(":")[1]||"").trim() : "";
-    };
+      };
     items = items.filter(i => {
       const type  = getVal(i.labels, "type:");
       const topic = getVal(i.labels, "topic:");
@@ -433,7 +493,7 @@ async function upvote(issueNumber){
   }
 }
 
-/* === إرسال الشكوى: رفع مباشر + إرسال proofPath فقط === */
+/* --- إرسال الشكوى: رفع مباشر + إرسال proofPath فقط --- */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -448,7 +508,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
 
   let proofPath = "";
   try{
-    // 1) تذكرة رفع من الخادم
+    // 1) تذكرة رفع
     const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
@@ -460,7 +520,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     }
     const { path, token } = await tkRes.json();
 
-    // 2) الرفع المباشر فقط (بدون createSignedUrl من الواجهة)
+    // 2) الرفع المباشر فقط
     const up = await supabase.storage.from(SUPABASE_BUCKET)
       .uploadToSignedUrl(path, token, file, {
         upsert:false,
@@ -468,7 +528,6 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
       });
     if(up.error) throw up.error;
 
-    // نمرّر المسار للخادم
     proofPath = path;
   }catch(err){
     console.error("Direct upload error:", err);
