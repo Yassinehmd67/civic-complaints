@@ -205,11 +205,14 @@ document.getElementById("toReports").onclick   = ()=>document.querySelector('.ta
 
 /* أدوات مساعدة */
 function labelValue(labels, prefix){
-  const l = (labels||[]).find(x=>{
-    const n = (x.name||x).toString();
+  const l = (labels || []).find(x => {
+    const n = (x.name || x).toString();
     return n.startsWith(prefix);
   });
-  return l ? (l.name||l).split(":)[1].trim() : "";
+  if (!l) return "";
+  const n = (l.name || l).toString();
+  const parts = n.split(":");
+  return parts.length > 1 ? parts[1].trim() : "";
 }
 function summaryFromBody(body=""){
   const line = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
