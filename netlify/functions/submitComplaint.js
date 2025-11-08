@@ -11,6 +11,7 @@ function cors(res) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "POST,OPTIONS",
       "Content-Type": "application/json",
+      ...(res.headers || {}),
     },
   };
 }
@@ -23,7 +24,7 @@ const {
   SUPABASE_SERVICE_ROLE,
   SUPABASE_BUCKET,
   SUPABASE_PROOFS_TABLE, // اختياري
-  HCAPTCHA_SECRET,       // ✅ مفتاح hCaptcha السري (بيئة Netlify)
+  // ⚠️ لم نعد نستخدم HCAPTCHA_SECRET هنا لتجنّب التحقق المزدوج
 } = process.env;
 
 const PROOFS_TABLE = SUPABASE_PROOFS_TABLE || "complaint_proofs";
@@ -53,32 +54,11 @@ export async function handler(event) {
       place: (p0.place || "").trim(),
       summary: (p0.summary || "").trim(),
       proofPath: (p0.proofPath || "").trim(),
-      proofUrl: (p0.proofUrl || "").trim(), // رابط موقّت من الواجهة (غير مستخدم هنا)
-      captchaToken: (p0.captchaToken || "").trim(), // ✅ من الواجهة
+      proofUrl: (p0.proofUrl || "").trim(),
+      // captchaToken يمكن أن يأتي من الواجهة لكننا لا نتحقق به هنا
     };
 
-    // ✅ تحقق hCaptcha أولًا
-    if (!HCAPTCHA_SECRET) {
-      return cors({ statusCode: 500, body: JSON.stringify({ error: "Captcha secret not configured" }) });
-    }
-    if (!p.captchaToken) {
-      return cors({ statusCode: 400, body: JSON.stringify({ error: "Captcha token missing" }) });
-    }
-    try {
-      const verify = await fetch("https://hcaptcha.com/siteverify", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ secret: HCAPTCHA_SECRET, response: p.captchaToken }),
-      });
-      const v = await verify.json();
-      if (!v.success) {
-        return cors({ statusCode: 403, body: JSON.stringify({ error: "Captcha verification failed" }) });
-      }
-    } catch (e) {
-      return cors({ statusCode: 500, body: JSON.stringify({ error: "Captcha check error" }) });
-    }
-
-    // التحقق
+    // التحقق من المعطيات
     const errs = [];
     if (!p.fullName || p.fullName.length < 8) errs.push("الاسم الكامل مطلوب.");
     if (!p.submittedDate) errs.push("تاريخ تقديم الشكوى مطلوب.");
@@ -106,7 +86,6 @@ export async function handler(event) {
     const showName = p.showName === "yes";
     const title = `شكوى: [${p.category}] ${showName ? p.fullName : "اسم محفوظ"} — ${p.submittedDate}`;
 
-    // ⚠️ لا نذكر أي تفاصيل عن المرفق داخل نص الـIssue
     const body = [
       `**النوع:** شكوى`,
       `**الاسم الكامل (للإدارة):** ${p.fullName}`,
@@ -153,16 +132,11 @@ export async function handler(event) {
         proof_path: proofPath,
         uploader_ip: ipHeader || null,
       });
-      if (insertErr) {
-        console.error("[Supabase insert error]", insertErr);
-        // لا نفشل الطلب للمستخدم، لكن نسجل الخطأ
-      }
+      if (insertErr) console.error("[Supabase insert error]", insertErr);
     } catch (e) {
       console.error("[Supabase insert catch]", e);
-      // لا نفشل الطلب؛ الـIssue أنشئ بالفعل
     }
 
-    // 3) رد للمستخدم
     return cors({
       statusCode: 200,
       body: JSON.stringify({ number: issue.number, html_url: issue.html_url }),
