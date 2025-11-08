@@ -765,57 +765,41 @@ document.getElementById("trackBtn").addEventListener("click", async () => {
 
 <script>
 (async function prefillUX(){
-  // 1) قراءة state.json إن وُجد
-  let city = "", tz = "Africa/Casablanca";
-  try {
-    const r = await fetch("./state.json", { cache: "no-store" });
-    if (r.ok) {
+  let city="", tz="Africa/Casablanca";
+  try{
+    const r = await fetch("./state.json",{cache:"no-store"});
+    if(r.ok){
       const s = await r.json();
       city = s?.geolocation?.data?.city || "";
       tz   = s?.geolocation?.data?.timezone || tz;
     }
-  } catch {} 
-  finally {
-    // خزّن الـTZ النهائي عالميًا بعد الحسم
-    window.__appTZ = tz;
-  }
+  }catch{} 
+  finally { window.__appTZ = tz; }
 
-  // 2) ملء حقل المكان افتراضيًا (الشكوى/التقرير) إن كان فارغًا
   const placeInputs = [
     document.querySelector('#complaintForm input[name="place"]'),
     document.querySelector('#reportForm    input[name="place"]')
   ].filter(Boolean);
-  if (city) {
-    placeInputs.forEach(el => { if (el && !el.value) el.value = city; });
+  if(city){
+    placeInputs.forEach(el=>{ if(el && !el.value) el.value = city; });
   }
 
-  // 3) ضبط تاريخ الشكوى لليوم الحالي وفق المنطقة الزمنية
-  try {
+  try{
     const dt = new Date();
-    const parts = new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'
-    }).formatToParts(dt);
-    const yyyy = parts.find(p => p.type === 'year')?.value || String(dt.getFullYear());
-    const mm   = parts.find(p => p.type === 'month')?.value || String(dt.getMonth() + 1).padStart(2, '0');
-    const dd   = parts.find(p => p.type === 'day')?.value || String(dt.getDate()).padStart(2, '0');
+    const parts = new Intl.DateTimeFormat('en-CA',{timeZone: tz, year:'numeric', month:'2-digit', day:'2-digit'}).formatToParts(dt);
+    const yyyy = parts.find(p=>p.type==='year')?.value || String(dt.getFullYear());
+    const mm   = parts.find(p=>p.type==='month')?.value || String(dt.getMonth()+1).padStart(2,'0');
+    const dd   = parts.find(p=>p.type==='day')?.value || String(dt.getDate()).padStart(2,'0');
     const today = `${yyyy}-${mm}-${dd}`;
     const dateEl = document.querySelector('#complaintForm input[name="submittedDate"]');
-    if (dateEl && !dateEl.value) dateEl.value = today;
-  } catch {}
+    if(dateEl && !dateEl.value) dateEl.value = today;
+  }catch{}
 
-  // 4) إظهار ملاحظة صغيرة بالتوقيت المحلي أعلى الصفحة (اختياري)
-  try {
-    const note = document.createElement('div');
-    note.className = 'muted';
-    note.style.margin = '6px 0';
-    note.textContent = `التوقيت المحلي المعتمد: ${tz}${city ? ` • المدينة المقترحة: ${city}` : ''}`;
-    document.querySelector('header')?.appendChild(note);
-  } catch {}
+  // 4) (تم تعطيل إظهار التوقيت المحلي في الواجهة النهائية)
 
-  // 5) تمرير المدينة افتراضيًا لكل استدعاءات fetchApprovedSmart دون تعديل بقية الكود
-  if (typeof window.fetchApprovedSmart === 'function' && city) {
+  if(typeof window.fetchApprovedSmart === 'function' && city){
     const _orig = window.fetchApprovedSmart;
-    window.fetchApprovedSmart = (filters = {}) => _orig({ city, ...filters });
+    window.fetchApprovedSmart = (filters={}) => _orig({ city, ...filters });
   }
 })();
 </script>
