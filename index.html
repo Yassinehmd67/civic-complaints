@@ -1,4 +1,4 @@
-<!-- index.html (مُحدّث بالكامل) -->
+<!-- index.html (مُحدّث بناءً على نسختك) -->
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -413,6 +413,16 @@ async function upvote(issueNumber){
   }catch{ alert("تعذّر تسجيل الإعجاب."); btn.disabled=false; }
 }
 
+/* === (1) دالة موحّدة للحصول على توكن الكابتشا === */
+function readCaptchaToken(){
+  if (window.__captchaToken) return window.__captchaToken;
+  try{
+    const ids = hcaptcha.getWidgetIds?.() || [];
+    const id = (typeof window.__captchaId === "number") ? window.__captchaId : (ids.length ? ids[0] : null);
+    return id!=null ? hcaptcha.getResponse(id) : "";
+  }catch{ return ""; }
+}
+
 /* إرسال الشكوى */
 document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>{
   const form=document.getElementById("complaintForm");
@@ -420,9 +430,12 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
   const status=document.getElementById("complaintStatus");
   status.textContent="جارٍ الرفع والتحقق…";
 
-  // hCaptcha token من الودجت المرسوم
-  const captchaToken = (window.__captchaId!=null) ? hcaptcha.getResponse(window.__captchaId) : "";
-  if(!captchaToken){ status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال."; return; }
+  // ✅ نقرأ التوكن بطريقة موثوقة
+  const captchaToken = readCaptchaToken();
+  if(!captchaToken){
+    status.textContent = "يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال.";
+    return;
+  }
 
   const file=fd.get("proofFile");
   if(!file || file.size===0){ status.textContent="الملف الموقّع مطلوب."; return; }
@@ -441,8 +454,16 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
     if(up.error) throw up.error;
     proofPath=path;
 
-    try{ if(window.__captchaId!=null) hcaptcha.reset(window.__captchaId); }catch{}
-  }catch(err){ console.error("Direct upload error:", err); status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة."; return; }
+    try{
+      // إعادة ضبط الودجت والتوكن بعد نجاح التذكرة/الرفع
+      if(typeof window.__captchaId === "number") hcaptcha.reset(window.__captchaId);
+      window.__captchaToken = "";
+    }catch{}
+  }catch(err){
+    console.error("Direct upload error:", err);
+    status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
+    return;
+  }
 
   const payload={
     fullName:fd.get("fullName"),
@@ -461,10 +482,11 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
     const data=await r.json();
     status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-    if(window.__captchaId!=null) try{hcaptcha.reset(window.__captchaId);}catch{}
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
-  }catch{ status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك."; }
+  }catch{
+    status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك.";
+  }
 });
 
 /* إرسال التقرير */
@@ -523,13 +545,19 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
 
 <!-- تحميل hCaptcha (تصيير صريح + onload) -->
 <script>
+  // === (2) ربط التوكن عالميًا وتحديثه تلقائيًا ===
   window.__captchaId = null;
+  window.__captchaToken = ""; // يُحدَّث عند النجاح/الانتهاء
+
   function onHCaptchaLoad(){
     if (!window.__captchaId) {
       try {
         window.__captchaId = hcaptcha.render('complaintCaptcha', {
           sitekey: '8f262b7a-face-428c-a24c-91c438fa76d4',
-          theme: 'light'
+          theme: 'light',
+          callback: function(token){ window.__captchaToken = token || ""; },
+          'expired-callback': function(){ window.__captchaToken = ""; },
+          'error-callback': function(){ window.__captchaToken = ""; }
         });
       } catch (e) {
         console.error("hCaptcha render error:", e);
