@@ -1,3 +1,4 @@
+<!-- index.html (مُحدّث بالكامل) -->
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -28,22 +29,14 @@
     .hint{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px;margin-top:6px}
     .sep{height:1px;background:#eee;margin:10px 0}
     .actions{display:flex;gap:8px;flex-wrap:wrap}
-
-    /* أزرار الهيدر */
     .nav-actions { display:flex;gap:8px;margin-top:8px;margin-inline-start:auto; }
     .nav-btn { padding:6px 12px;border:1px solid #ccc;border-radius:8px;background:#f9f9f9;font-size:0.9rem;cursor:pointer;text-decoration:none;color:#111;transition:.2s; }
     .nav-btn:hover { background:#111;color:#fff;border-color:#111; }
-
-    /* عنوان */
     .title-card { background:#f9f9f9;border:1px solid #ddd;border-radius:12px;padding:16px 20px;box-shadow:0 2px 6px rgba(0,0,0,0.08);margin:0 auto 12px;text-align:center;width:100% }
     .title-card h1 { margin:0 0 6px;font-size:1.8rem;color:#0a0a0a }
     .title-card .muted { text-align:center;font-size:0.92rem;color:#555 }
-
-    /* عناوين فرعية */
     .section-title { background:#f9f9f9;border:1px solid #ddd;border-radius:10px;padding:12px 16px;margin-bottom:14px;box-shadow:0 2px 5px rgba(0,0,0,0.07);text-align:right }
     .section-title h2 { margin:0;font-size:1.4rem;color:#0a0a0a }
-
-    /* تيلجرام */
     .telegram-fab { position:fixed;bottom:20px;left:20px;background:#0088cc;border-radius:50%;width:54px;height:54px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2);animation:pulse 1.5s infinite;z-index:999 }
     .telegram-fab:hover { background:#006fa1 }
     @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
@@ -63,31 +56,30 @@
     <a id="toReports" class="nav-btn">📑 تقرير</a>
     <a href="about.html" class="nav-btn">ℹ️ حول المنصة</a>
     <a id="toDonations" class="nav-btn">⚖️ التبرعات</a>
-    </nav>
+  </nav>
 </header>
 
-  <!-- التبويبات -->
-  <section class="tabs">
-    <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
-    <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
-    <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
-    <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
-    <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
-    <button class="tab-btn" data-tab="donationsTab">🎗️ التبرعات</button>
-  </section>
+<section class="tabs">
+  <button class="tab-btn active" data-tab="complaintTab">نموذج شكوى</button>
+  <button class="tab-btn" data-tab="reportTab">نموذج تقرير</button>
+  <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
+  <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
+  <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
+  <button class="tab-btn" data-tab="donationsTab">🎗️ التبرعات</button>
+</section>
 
-  <!-- تتبع الحالة -->
-  <section id="statusTab" class="card" style="display:none">
-    <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
-    <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
-    <div class="row">
-      <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
-      <button id="trackBtn" class="btn">استعلام</button>
-    </div>
-    <div id="trackResult" style="margin-top:12px"></div>
-  </section>
+<!-- تتبع الحالة -->
+<section id="statusTab" class="card" style="display:none">
+  <div class="section-title"><h2>تتبع حالة الشكوى/التقرير</h2></div>
+  <p class="muted">أدخل رقم الملف كما ظهر لك بعد الإرسال (مثال: 123).</p>
+  <div class="row">
+    <input id="trackNumber" type="number" placeholder="رقم الملف (بدون #)" />
+    <button id="trackBtn" class="btn">استعلام</button>
+  </div>
+  <div id="trackResult" style="margin-top:12px"></div>
+</section>
 
-  <!-- نموذج الشكوى -->
+<!-- نموذج الشكوى -->
 <section id="complaintTab" class="card">
   <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
   <p class="muted">
@@ -122,20 +114,14 @@
     <input name="place" placeholder="مثال: فاس - مسجد ..." />
 
     <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
-    <textarea
-      name="summary"
-      rows="4"
-      minlength="120"
-      maxlength="400"
-      required
-      placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
+    <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
 
     <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
 
     <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
     <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
 
-    <!-- ✅ hCaptcha widget (واحد فقط داخل النموذج) -->
+    <!-- hCaptcha: عنصر الحاوية فقط -->
     <div id="complaintCaptcha" class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
 
     <div class="row">
@@ -172,67 +158,56 @@
   </form>
 </section>
 
-  <!-- الشكايات المنشورة -->
-  <section id="complaintsListTab" class="card" style="display:none">
-    <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
-    <div id="complaintsList" class="grid" aria-live="polite"></div>
-  </section>
+<!-- القوائم -->
+<section id="complaintsListTab" class="card" style="display:none">
+  <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
+  <div id="complaintsList" class="grid" aria-live="polite"></div>
+</section>
 
-  <!-- التقارير المنشورة -->
-  <section id="reportsListTab" class="card" style="display:none">
-    <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
-    <div id="reportsList" class="grid" aria-live="polite"></div>
-  </section>
+<section id="reportsListTab" class="card" style="display:none">
+  <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
+  <div id="reportsList" class="grid" aria-live="polite"></div>
+</section>
 
-  <!-- تبويب التبرعات -->
-  <section id="donationsTab" class="card" style="display:none">
-    <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
+<section id="donationsTab" class="card" style="display:none">
+  <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
+  <p class="muted">
+    هذه المنصة مشروع مدني غير ربحي. التبرعات تُستخدم لتغطية المصاريف التقنية
+    ولدعم التطوير المستمر وإضافة خصائص جديدة. مساهمتك تساعد في إبقاء المنصة شغالة وآمنة.
+  </p>
 
-    <p class="muted">
-      هذه المنصة مشروع مدني غير ربحي. التبرعات تُستخدم لتغطية المصاريف التقنية (الاستضافة، التخزين، أسماء النطاقات)
-      ولدعم التطوير المستمر وإضافة خصائص جديدة. مساهمتك تساعد في إبقاء المنصة شغالة، سريعة، وآمنة للجميع.
-    </p>
-
-    <div class="card" style="margin-top:10px">
-      <h3 style="margin:0 0 6px">التبرع عبر <b>البريد بنك</b></h3>
-      <div class="row" style="align-items: center">
-        <div class="badge">رقم الحساب</div>
-        <code id="bank-acc" style="user-select:all">9408915</code>
-        <button class="pill" onclick="copyText('#bank-acc')">نسخ</button>
-      </div>
-      <div class="row" style="margin-top:8px;align-items: center">
-        <div class="badge">اسم صاحب الحساب</div>
-        <code id="bank-name" style="user-select:all">yassine iboun</code>
-        <button class="pill" onclick="copyText('#bank-name')">نسخ</button>
-      </div>
+  <div class="card" style="margin-top:10px">
+    <h3 style="margin:0 0 6px">التبرع عبر <b>البريد بنك</b></h3>
+    <div class="row" style="align-items: center">
+      <div class="badge">رقم الحساب</div>
+      <code id="bank-acc" style="user-select:all">9408915</code>
+      <button class="pill" onclick="copyText('#bank-acc')">نسخ</button>
     </div>
-
-    <div class="card" style="margin-top:10px">
-      <h3 style="margin:0 0 6px">التبرع عبر <b>USDT (BEP20)</b></h3>
-      <div class="row" style="align-items: center">
-        <div class="badge">العنوان</div>
-        <code id="usdt-bep20" style="word-break:break-all;user-select:all">
-          0xE55C8cbBEb6c40b7ea18e0D418495267b487978e
-        </code>
-        <button class="pill" onclick="copyText('#usdt-bep20')">نسخ</button>
-      </div>
-      <p class="muted" style="margin-top:8px">
-        تنبيه: الرجاء التأكد من اختيار شبكة <b>BEP20</b> عند التحويل.
-      </p>
+    <div class="row" style="margin-top:8px;align-items: center">
+      <div class="badge">اسم صاحب الحساب</div>
+      <code id="bank-name" style="user-select:all">yassine iboun</code>
+      <button class="pill" onclick="copyText('#bank-name')">نسخ</button>
     </div>
+  </div>
 
-    <div class="hint">
-      سننشر لاحقًا ملخصات شفافية دورية توضح أوجه الصرف (استضافة/تطوير) لضمان الثقة العامة.
-      شكرًا لدعمك! 🎗️
+  <div class="card" style="margin-top:10px">
+    <h3 style="margin:0 0 6px">التبرع عبر <b>USDT (BEP20)</b></h3>
+    <div class="row" style="align-items: center">
+      <div class="badge">العنوان</div>
+      <code id="usdt-bep20" style="word-break:break-all;user-select:all">
+        0xE55C8cbBEb6c40b7ea18e0D418495267b487978e
+      </code>
+      <button class="pill" onclick="copyText('#usdt-bep20')">نسخ</button>
     </div>
-  </section>
+    <p class="muted" style="margin-top:8px">تنبيه: استخدم شبكة <b>BEP20</b> عند التحويل.</p>
+  </div>
+</section>
 
-  <div class="sep"></div>
-  <footer class="muted">
-    <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
-  </footer>
+<div class="sep"></div>
+<footer class="muted">
+  <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
+</footer>
 
-<!-- تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
     <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
@@ -275,21 +250,14 @@ document.getElementById("toReports").onclick   = ()=>document.querySelector('.ta
 const toDon = document.getElementById("toDonations");
 if(toDon){ toDon.onclick = ()=>document.querySelector('.tab-btn[data-tab="donationsTab"]').click(); }
 
-/* أدوات مساعدة */
+/* أدوات */
 function labelValue(labels, prefix){
-  const l = (labels || []).find(x => {
-    const n = (x.name || x).toString();
-    return n.startsWith(prefix);
-  });
+  const l = (labels || []).find(x => ((x.name||x)+"").startsWith(prefix));
   if (!l) return "";
   const n = (l.name || l).toString();
-  const parts = n.split(":");
-  return parts.length > 1 ? parts[1].trim() : "";
+  return (n.split(":")[1]||"").trim();
 }
-function summaryFromBody(body=""){
-  const line = body.split("\n").find(l=>l.startsWith("**ملخص**:")) || "";
-  return line.replace("**ملخص**:","").trim();
-}
+function summaryFromBody(body=""){ const line = body.split("\n").find(l=>l.startsWith("**ملخص**:"))||""; return line.replace("**ملخص**:","").trim(); }
 function statusLabel(labels){
   const has = n => (labels||[]).some(l=>(l.name||"")===n);
   if(has("approved")) return "✅ مقبول/منشور";
@@ -299,41 +267,31 @@ function statusLabel(labels){
   if(has("pending")) return "⌛ قيد الاستلام";
   return "— غير محدد —";
 }
-function escapeHtml(s=''){
-  return s.replace(/[&<>"'`=\/]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c]));
-}
+function escapeHtml(s=''){return s.replace(/[&<>"'`=\/]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[c]));}
 function copyText(selector){
-  const el = document.querySelector(selector);
-  if(!el) return;
-  const txt = (el.textContent || el.value || "").trim();
-  if(!txt) return;
-  navigator.clipboard.writeText(txt).then(()=>{ alert("تم النسخ ✅"); }, ()=>{
-    const ta = document.createElement("textarea");
-    ta.value = txt; document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); alert("تم النسخ ✅"); }
-    catch { alert("تعذّر النسخ، انسخ يدويًا."); }
-    finally { document.body.removeChild(ta); }
+  const el = document.querySelector(selector); if(!el) return;
+  const txt = (el.textContent || el.value || "").trim(); if(!txt) return;
+  navigator.clipboard.writeText(txt).then(()=>alert("تم النسخ ✅"),()=>{
+    const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy"); alert("تم النسخ ✅");}catch{alert("انسخ يدويًا.");}finally{document.body.removeChild(ta);}
   });
 }
 
 /* بطاقة عنصر */
 function cardFor(issue, type){
   const labels = issue.labels || [];
-  const topic = labelValue(labels, "topic:");
-  const city  = labelValue(labels, "city:");
+  const topic = labelValue(labels,"topic:");
+  const city  = labelValue(labels,"city:");
   const created = new Date(issue.created_at);
   const url = issue.html_url;
   const number = issue.number;
   const commentsCount = issue.comments || 0;
   const likes = (issue.reactions && typeof issue.reactions["+1"]==="number") ? issue.reactions["+1"] : (issue.reactions?.total_count || 0);
-
   const body = (issue.body||"");
   const summaryText = summaryFromBody(body);
   const excerpt = body.replace(/\r?\n/g," ").slice(0,240) + (body.length>240?"…":"");
   const content = (type==="complaint") ? (summaryText || "—") : excerpt;
   const badgeType = (type==="complaint") ? "شكوى (ملخص)" : "تقرير";
-
-  // منع تكرار الإعجاب: تعطيل الزر بعد أول نقرة عبر localStorage
   const votedKey = `voted-${number}`;
   const voted = localStorage.getItem(votedKey) === "1";
   const voteBtnAttr = voted ? 'disabled aria-disabled="true"' : "";
@@ -350,13 +308,11 @@ function cardFor(issue, type){
     <h3 style="margin:6px 0 0"><a href="${url}" target="_blank" rel="noopener">${escapeHtml(issue.title||"ملف")}</a></h3>
     <div class="muted">${created.toLocaleDateString()} • تعليقات: <span id="c-${number}">${commentsCount}</span> • إعجابات: <span id="l-${number}">${likes}</span></div>
     <p>${escapeHtml(content)}</p>
-
     <div class="actions">
       <button class="pill" ${voteBtnAttr} onclick="upvote(${number})">${voteBtnText}</button>
       <a class="pill" href="${url}" target="_blank" rel="noopener">فتح على GitHub</a>
       <a class="pill" href="${url}#new_comment_field" target="_blank" rel="noopener">فتح التعليقات</a>
     </div>
-
     <details style="margin-top:8px">
       <summary>أضف شهادة/تعليق</summary>
       <form class="comment-form" data-issue="${number}" style="margin-top:8px">
@@ -373,21 +329,11 @@ function cardFor(issue, type){
   </article>`;
 }
 
-/* كاش بسيط (60 ثانية) */
-function cacheGet(key, maxAgeMs=60000){
-  try{
-    const raw = sessionStorage.getItem(key);
-    if(!raw) return null;
-    const obj = JSON.parse(raw);
-    if(Date.now() - obj.t > maxAgeMs) return null;
-    return obj.v;
-  }catch{ return null }
-}
-function cacheSet(key, val){
-  try{ sessionStorage.setItem(key, JSON.stringify({ t: Date.now(), v: val })); }catch{}
-}
+/* كاش بسيط */
+function cacheGet(key, maxAgeMs=60000){try{const raw=sessionStorage.getItem(key); if(!raw) return null; const obj=JSON.parse(raw); if(Date.now()-obj.t>maxAgeMs) return null; return obj.v;}catch{return null}}
+function cacheSet(key,val){try{sessionStorage.setItem(key,JSON.stringify({t:Date.now(),v:val}))}catch{}}
 
-/* جلب approved بذكاء */
+/* جلب approved */
 async function fetchApprovedSmart(filters = {}) {
   const onNetlify = location.hostname.endsWith(".netlify.app");
   const cacheKey = "approved:" + JSON.stringify(filters) + ":" + (onNetlify?"netlify":"ghpages");
@@ -395,285 +341,160 @@ async function fetchApprovedSmart(filters = {}) {
   if(cached) return cached;
 
   let items = [];
-
   if (onNetlify) {
     const params = new URLSearchParams();
     if (filters.type)  params.set("type",  filters.type);
     if (filters.topic) params.set("topic", filters.topic);
     if (filters.city)  params.set("city",  filters.city);
-
-    const url = `${FN_BASE}/listApproved` + (params.toString() ? ("?" + params.toString()) : "");
+    const url = `${FN_BASE}/listApproved` + (params.toString()?`?${params}`:"");
     const r = await fetch(url, { headers: { "Accept": "application/json" } });
     if (!r.ok) throw new Error("Proxy error");
-    const data = await r.json(); // { ok, count, items }
+    const data = await r.json();
     items = data.items || [];
   } else {
     let page = 1;
     while (true) {
       const url = new URL(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`);
-      url.searchParams.set("state", "open");
-      url.searchParams.set("labels", "approved");
-      url.searchParams.set("per_page", "100");
-      url.searchParams.set("page", String(page));
-
-      const r = await fetch(url.toString(), { headers: { "Accept": "application/vnd.github+json" } });
+      url.searchParams.set("state","open");
+      url.searchParams.set("labels","approved");
+      url.searchParams.set("per_page","100");
+      url.searchParams.set("page",String(page));
+      const r = await fetch(url.toString(), { headers: { "Accept":"application/vnd.github+json" } });
       if (!r.ok) break;
-      const batch = (await r.json()).filter(i => !i.pull_request);
+      const batch = (await r.json()).filter(i=>!i.pull_request);
       items.push(...batch);
-      if (batch.length < 100) break;
+      if (batch.length<100) break;
       page++;
     }
-    const getVal = (labels, pfx) => {
-      const L = (labels||[]).find(l => (l.name||"").startsWith(pfx));
-      return L ? (L.name.split(":")[1]||"").trim() : "";
-      };
-    items = items.filter(i => {
-      const type  = getVal(i.labels, "type:");
-      const topic = getVal(i.labels, "topic:");
-      const city  = getVal(i.labels, "city:");
-      if (filters.type  && type  !== filters.type)  return false;
-      if (filters.topic && topic !== filters.topic) return false;
-      if (filters.city  && city  !== filters.city)  return false;
+    const getVal=(labels,pfx)=>{const L=(labels||[]).find(l=>(l.name||"").startsWith(pfx));return L?(L.name.split(":")[1]||"").trim():""};
+    items = items.filter(i=>{
+      const type=getVal(i.labels,"type:"); const topic=getVal(i.labels,"topic:"); const city=getVal(i.labels,"city:");
+      if(filters.type && type!==filters.type) return false;
+      if(filters.topic && topic!==filters.topic) return false;
+      if(filters.city && city!==filters.city) return false;
       return true;
     });
   }
-
   cacheSet(cacheKey, items);
   return items;
 }
 
-/* عرض الشكايات */
-async function renderComplaints(){
-  const list = document.getElementById("complaintsList");
-  list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
-  try{
-    const items = await fetchApprovedSmart({ type: "complaint" });
-    list.innerHTML = items.map(it=>cardFor(it,"complaint")).join("") || "<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
-    bindCommentForms(list);
-  }catch(e){
-    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
-    console.error(e);
-  }
-}
-
-/* عرض التقارير */
-async function renderReports(){
-  const list = document.getElementById("reportsList");
-  list.innerHTML = "<p class='muted'>… جارٍ التحميل</p>";
-  try{
-    const items = await fetchApprovedSmart({ type: "report" });
-    list.innerHTML = items.map(it=>cardFor(it,"report")).join("") || "<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
-    bindCommentForms(list);
-  }catch(e){
-    list.innerHTML = "<p class='muted'>تعذّر التحميل.</p>";
-    console.error(e);
-  }
-}
+/* عرض */
+async function renderComplaints(){ const list=document.getElementById("complaintsList"); list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
+  try{ const items=await fetchApprovedSmart({type:"complaint"}); list.innerHTML=items.map(it=>cardFor(it,"complaint")).join("")||"<p class='muted'>لا توجد شكايات منشورة بعد.</p>"; bindCommentForms(list);}catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);} }
+async function renderReports(){ const list=document.getElementById("reportsList"); list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
+  try{ const items=await fetchApprovedSmart({type:"report"}); list.innerHTML=items.map(it=>cardFor(it,"report")).join("")||"<p class='muted'>لا توجد تقارير منشورة بعد.</p>"; bindCommentForms(list);}catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);} }
 
 /* نماذج التعليقات */
 function bindCommentForms(scope=document){
   scope.querySelectorAll(".comment-form").forEach(form=>{
     form.addEventListener("submit", async (e)=>{
       e.preventDefault();
-      const fd = new FormData(form);
-      const payload = {
-        issueNumber: Number(form.dataset.issue),
-        fullName: fd.get("fullName"),
-        comment: fd.get("comment")
-      };
-      const status = form.querySelector(".status");
-      status.textContent = "جارٍ الإرسال…";
+      const fd=new FormData(form);
+      const payload={issueNumber:Number(form.dataset.issue), fullName:fd.get("fullName"), comment:fd.get("comment")};
+      const status=form.querySelector(".status"); status.textContent="جارٍ الإرسال…";
       try{
-        const r = await fetch(`${FN_BASE}/submitComment`, {
-          method:"POST", headers: {"Content-Type":"application/json"},
-          body: JSON.stringify(payload)
-        });
+        const r=await fetch(`${FN_BASE}/submitComment`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
         status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
-        if(r.ok){
-          form.reset();
-          const c = document.getElementById(`c-${payload.issueNumber}`);
-          if(c) c.textContent = String(Number(c.textContent||"0")+1);
-        }
-      }catch{ status.textContent = "تعذّر الإرسال." }
+        if(r.ok){ form.reset(); const c=document.getElementById(`c-${payload.issueNumber}`); if(c) c.textContent=String(Number(c.textContent||"0")+1); }
+      }catch{ status.textContent="تعذّر الإرسال."; }
     });
   });
 }
 
-/* زر الإعجاب مع منع التكرار */
+/* إعجاب */
 async function upvote(issueNumber){
-  const votedKey = `voted-${issueNumber}`;
-  if(localStorage.getItem(votedKey) === "1"){
-    alert("تم احتساب صوتك.");
-    return;
-  }
-  const btn = document.querySelector(`#card-${issueNumber} button`);
-  btn.disabled = true;
+  const votedKey=`voted-${issueNumber}`; if(localStorage.getItem(votedKey)==="1"){alert("تم احتساب صوتك."); return;}
+  const btn=document.querySelector(`#card-${issueNumber} button`); btn.disabled=true;
   try{
-    const r = await fetch(`${FN_BASE}/upvoteIssue`, {
-      method:"POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ issueNumber })
-    });
-    if(r.ok){
-      const l = document.getElementById(`l-${issueNumber}`);
-      if(l) l.textContent = String(Number(l.textContent||"0")+1);
-      localStorage.setItem(votedKey, "1");
-      btn.textContent = "تم احتساب صوتك";
-      alert("تم ضمّ صوتك. شكرًا!");
-    }else{
-      alert("تعذّر تسجيل الإعجاب الآن.");
-      btn.disabled = false;
-    }
-  }catch(e){
-    alert("تعذّر تسجيل الإعجاب.");
-    btn.disabled = false;
-  }
+    const r=await fetch(`${FN_BASE}/upvoteIssue`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({issueNumber})});
+    if(r.ok){ const l=document.getElementById(`l-${issueNumber}`); if(l) l.textContent=String(Number(l.textContent||"0")+1); localStorage.setItem(votedKey,"1"); btn.textContent="تم احتساب صوتك"; alert("تم ضمّ صوتك. شكرًا!"); }
+    else { alert("تعذّر تسجيل الإعجاب الآن."); btn.disabled=false; }
+  }catch{ alert("تعذّر تسجيل الإعجاب."); btn.disabled=false; }
 }
 
-/* --- إرسال الشكوى: رفع مباشر + hCaptcha + إرسال proofPath فقط --- */
+/* إرسال الشكوى */
 document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>{
-  const form = document.getElementById("complaintForm");
-  const fd = new FormData(form);
-  const status = document.getElementById("complaintStatus");
-  status.textContent = "جارٍ الرفع والتحقق…";
+  const form=document.getElementById("complaintForm");
+  const fd=new FormData(form);
+  const status=document.getElementById("complaintStatus");
+  status.textContent="جارٍ الرفع والتحقق…";
 
-  // ✅ التقط توكن hCaptcha من الودجت الحالي (أولوية getResponse ثم الحقل المخفي)
-  const captchaToken =
-    (window.hcaptcha && hcaptcha.getResponse()) ||
-    document.querySelector('#complaintForm [name="h-captcha-response"]')?.value ||
-    "";
+  // hCaptcha token من الودجت المرسوم
+  const captchaToken = (window.__captchaId!=null) ? hcaptcha.getResponse(window.__captchaId) : "";
+  if(!captchaToken){ status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال."; return; }
 
-  if (!captchaToken) {
-    status.textContent = "يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال.";
-    return;
-  }
+  const file=fd.get("proofFile");
+  if(!file || file.size===0){ status.textContent="الملف الموقّع مطلوب."; return; }
+  if(file.size>10*1024*1024){ status.textContent="حجم الملف أكبر من 10MB."; return; }
 
-  const file = fd.get("proofFile");
-  if(!file || file.size===0){ status.textContent = "الملف الموقّع مطلوب."; return; }
-  if(file.size > 10*1024*1024){ status.textContent = "حجم الملف أكبر من 10MB."; return; }
-
-  let proofPath = "";
-  try {
-    // 1) تذكرة رفع (نفس توكن الكابتشا)
-    const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({
-        mime: file.type || "application/pdf",
-        captchaToken
-      })
+  let proofPath="";
+  try{
+    const tkRes=await fetch(`${FN_BASE}/getUploadTicket`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ mime:file.type||"application/pdf", captchaToken })
     });
-    if(!tkRes.ok){
-      const t = await tkRes.text();
-      throw new Error("فشل تحضير تذكرة الرفع: " + t);
-    }
+    if(!tkRes.ok){ const t=await tkRes.text(); throw new Error("فشل تحضير تذكرة الرفع: "+t); }
     const { path, token } = await tkRes.json();
 
-    // 2) الرفع المباشر
-    const up = await supabase.storage.from(SUPABASE_BUCKET)
-      .uploadToSignedUrl(path, token, file, {
-        upsert:false,
-        contentType: file.type || "application/octet-stream"
-      });
+    const up=await supabase.storage.from(SUPABASE_BUCKET).uploadToSignedUrl(path, token, file, { upsert:false, contentType:file.type||"application/octet-stream" });
     if(up.error) throw up.error;
+    proofPath=path;
 
-    proofPath = path;
-  } catch (err) {
-    console.error("Direct upload error:", err);
-    status.textContent = "تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
-    return;
-  } finally {
-    try { window.hcaptcha?.reset(); } catch {}
-  }
+    try{ if(window.__captchaId!=null) hcaptcha.reset(window.__captchaId); }catch{}
+  }catch(err){ console.error("Direct upload error:", err); status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة."; return; }
 
-  // 3) إرسال بيانات الشكوى (المسار فقط) + نفس توكن الكابتشا
-  const payload = {
-    fullName: fd.get("fullName"),
-    showName: fd.get("showName"),
-    submittedDate: fd.get("submittedDate"),
-    category: fd.get("category"),
-    place: fd.get("place"),
-    summary: fd.get("summary"),
+  const payload={
+    fullName:fd.get("fullName"),
+    showName:fd.get("showName"),
+    submittedDate:fd.get("submittedDate"),
+    category:fd.get("category"),
+    place:fd.get("place"),
+    summary:fd.get("summary"),
     proofPath,
     captchaToken
   };
 
   try{
-    const r = await fetch(`${FN_BASE}/submitComplaint`, {
-      method:"POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-
-    if(!r.ok){
-      const t = await r.text();
-      status.textContent = "تعذّر إرسال الشكوى: " + t;
-      return;
-    }
-
-    const data = await r.json(); // { number, html_url }
-    status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+    const r=await fetch(`${FN_BASE}/submitComplaint`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(!r.ok){ const t=await r.text(); status.textContent="تعذّر إرسال الشكوى: "+t; return; }
+    const data=await r.json();
+    status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-
-    // افتح تبويب تتبع الحالة وجهّز الرقم
+    if(window.__captchaId!=null) try{hcaptcha.reset(window.__captchaId);}catch{}
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
-    const tn = document.getElementById("trackNumber");
-    if(tn){ tn.value = data.number; }
-  } catch {
-    status.textContent = "تعذّر إرسال الشكوى. تحقّق من اتصالك.";
-  }
+    const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
+  }catch{ status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك."; }
 });
 
 /* إرسال التقرير */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
-  const form = e.target;
-  const fd = new FormData(form);
-
-  const status = document.getElementById("reportStatus");
-  status.textContent = "جارٍ الإرسال…";
-
-  const payload = {
-    fullName: fd.get("fullName"),
-    eventDateTime: fd.get("eventDateTime"),
-    place: fd.get("place"),
-    category: fd.get("category"),
-    body: fd.get("body"),
-    evidenceUrl: fd.get("evidenceUrl")
-  };
+  const form=e.target; const fd=new FormData(form);
+  const status=document.getElementById("reportStatus"); status.textContent="جارٍ الإرسال…";
+  const payload={ fullName:fd.get("fullName"), eventDateTime:fd.get("eventDateTime"), place:fd.get("place"), category:fd.get("category"), body:fd.get("body"), evidenceUrl:fd.get("evidenceUrl") };
   try{
-    const r = await fetch(`${FN_BASE}/submitReport`, {
-      method:"POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(payload)
-    });
-
-    if(!r.ok){
-      status.textContent = "تعذّر إرسال التقرير.";
-      return;
-    }
-
-    const data = await r.json(); // { number, html_url }
-    status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
+    const r=await fetch(`${FN_BASE}/submitReport`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(!r.ok){ status.textContent="تعذّر إرسال التقرير."; return; }
+    const data=await r.json();
+    status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-
-    // افتح تبويب تتبع الحالة
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
-    const tn = document.getElementById("trackNumber");
-    if(tn){ tn.value = data.number; }
-  }catch{
-    status.textContent = "تعذّر إرسال التقرير. تحقّق من اتصالك.";
-  }
+    const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
+  }catch{ status.textContent="تعذّر إرسال التقرير. تحقّق من اتصالك."; }
 });
 
 /* تتبع الحالة */
 document.getElementById("trackBtn").addEventListener("click", async ()=>{
-  const num = Number(document.getElementById("trackNumber").value);
-  const box = document.getElementById("trackResult");
-  if(!num){ box.innerHTML = "<p class='muted'>أدخل رقمًا صحيحًا.</p>"; return; }
-  box.innerHTML = "<p class='muted'>… جارٍ الاستعلام</p>";
+  const num=Number(document.getElementById("trackNumber").value);
+  const box=document.getElementById("trackResult");
+  if(!num){ box.innerHTML="<p class='muted'>أدخل رقمًا صحيحًا.</p>"; return; }
+  box.innerHTML="<p class='muted'>… جارٍ الاستعلام</p>";
   try{
-    const r = await fetch(`${FN_BASE}/getStatus?number=${num}`);
-    if(!r.ok){ box.innerHTML = "<p class='muted'>تعذّر قراءة الحالة.</p>"; return; }
-    const d = await r.json();
-    box.innerHTML = `
+    const r=await fetch(`${FN_BASE}/getStatus?number=${num}`);
+    if(!r.ok){ box.innerHTML="<p class='muted'>تعذّر قراءة الحالة.</p>"; return; }
+    const d=await r.json();
+    box.innerHTML=`
       <div class="card">
         <div class="row">
           <span class="badge">#${d.number}</span>
@@ -684,13 +505,9 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
         <h3 style="margin:6px 0 0">${escapeHtml(d.title)}</h3>
         <div class="muted">${new Date(d.created_at).toLocaleDateString()} • الحالة: <b>${statusLabel(d.labels)}</b></div>
         <p>${escapeHtml(d.display)}</p>
-        <div class="row">
-          <a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a>
-        </div>
+        <div class="row"><a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a></div>
       </div>`;
-  }catch(e){
-    box.innerHTML = "<p class='muted'>حصل خطأ أثناء الاستعلام.</p>";
-  }
+  }catch{ box.innerHTML="<p class='muted'>حصل خطأ أثناء الاستعلام.</p>"; }
 });
 
 /* ref= */
@@ -704,7 +521,22 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
 })();
 </script>
 
-<!-- ✅ سكربت hCaptcha العام (مرة واحدة) -->
-<script src="https://js.hcaptcha.com/1/api.js?hl=ar" async defer></script>
+<!-- تحميل hCaptcha (تصيير صريح + onload) -->
+<script>
+  window.__captchaId = null;
+  function onHCaptchaLoad(){
+    if (!window.__captchaId) {
+      try {
+        window.__captchaId = hcaptcha.render('complaintCaptcha', {
+          sitekey: '8f262b7a-face-428c-a24c-91c438fa76d4',
+          theme: 'light'
+        });
+      } catch (e) {
+        console.error("hCaptcha render error:", e);
+      }
+    }
+  }
+</script>
+<script src="https://js.hcaptcha.com/1/api.js?hl=ar&render=explicit&onload=onHCaptchaLoad" async defer></script>
 </body>
 </html>
