@@ -13,13 +13,85 @@ function cors(res) {
   };
 }
 
+const {
+  REPO_OWNER,
+  REPO_NAME,
+  GITHUB_TOKEN,
+  HCAPTCHA_SECRET,   // مفتاح hCaptcha السري (خادم)
+  ORIGIN_WHITELIST, // اختياري: example.com,foo.netlify.app
+} = process.env;
+
+/* ========= تبطيء بسيط لكل IP ========= */
+const RL_WINDOW_MS = 10 * 60 * 1000; // 10 دقائق
+const RL_LIMIT = 30;                  // حد تقارير أعلى قليلًا
+const rlMap = new Map();              // ip -> [timestamps]
+
+function rateHit(ip) {
+  const now = Date.now();
+  const arr = (rlMap.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  arr.push(now);
+  rlMap.set(ip, arr);
+  return arr.length;
+}
+
+/* ========= تحقّق hCaptcha ========= */
+async function verifyHCaptcha(token) {
+  if (!HCAPTCHA_SECRET) return false;
+  if (!token || typeof token !== "string" || token.length < 10) return false;
+
+  const res = await fetch("https://hcaptcha.com/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      secret: HCAPTCHA_SECRET,
+      response: token,
+    }),
+  });
+  if (!res.ok) return false;
+  const data = await res.json().catch(() => ({}));
+  return !!data.success;
+}
+
+/* ========= تحقّق Origin (اختياري) ========= */
+function isOriginAllowed(headers) {
+  if (!ORIGIN_WHITELIST) return true;
+  const allow = ORIGIN_WHITELIST.split(",").map((s) => s.trim()).filter(Boolean);
+  const origin = headers.origin || headers.Origin || "";
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    const host = u.host.toLowerCase();
+    return allow.some((h) => host === h.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
   if (event.httpMethod !== "POST")    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
 
-  const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN } = process.env;
   if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing server env" }) });
+  }
+
+  // فحص Origin
+  if (!isOriginAllowed(event.headers || {})) {
+    return cors({ statusCode: 403, body: JSON.stringify({ error: "Origin not allowed" }) });
+  }
+
+  // تبطيء حسب IP
+  const ipHeader =
+    event.headers["x-nf-client-connection-ip"] ||
+    event.headers["client-ip"] ||
+    (event.headers["x-forwarded-for"] || "").split(",")[0] ||
+    null;
+
+  if (rateHit(ipHeader || "unknown") > RL_LIMIT) {
+    return cors({
+      statusCode: 429,
+      body: JSON.stringify({ error: "طلبات كثيرة من نفس العنوان. حاول لاحقًا." }),
+    });
   }
 
   try {
@@ -33,7 +105,14 @@ export async function handler(event) {
       category: (p0.category || "").trim(),
       body: (p0.body || "").trim(),
       evidenceUrl: (p0.evidenceUrl || "").trim(),
+      hcaptchaToken: (p0.hcaptchaToken || "").trim(),
     };
+
+    // hCaptcha إلزامي
+    const okCaptcha = await verifyHCaptcha(p.hcaptchaToken);
+    if (!okCaptcha) {
+      return cors({ statusCode: 400, body: JSON.stringify({ error: "فشل التحقق من hCaptcha" }) });
+    }
 
     // التحقق من المدخلات
     const errs = [];

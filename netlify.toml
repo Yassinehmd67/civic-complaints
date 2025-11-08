@@ -5,10 +5,51 @@
   external_node_modules = ["@supabase/supabase-js", "busboy", "bcryptjs"]
   included_files = ["netlify/functions/**"]
 
-# CORS لكل الدوال
+# CORS للدوال (يبقى بسيطًا هنا؛ المنطق الدقيق داخل كل Function)
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
     Access-Control-Allow-Headers = "Content-Type, Authorization"
     Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+
+# أمان عام للموقع
+[[headers]]
+  for = "/*"
+  [headers.values]
+    # ⚠️ حدّث المجالات أدناه حسب حاجتك (Netlify site, Supabase, GitHub API, hCaptcha, esm.sh)
+    Content-Security-Policy = "default-src 'self'; script-src 'self' https://js.hcaptcha.com https://*.hcaptcha.com https://esm.sh 'unsafe-inline' 'report-sample'; connect-src 'self' https://delicate-maamoul-683849.netlify.app https://ymeaeffhygpkzkychdjn.supabase.co https://api.github.com; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline'; font-src 'self'; frame-src https://hcaptcha.com https://*.hcaptcha.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; upgrade-insecure-requests"
+    Referrer-Policy = "no-referrer"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=()"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    Cross-Origin-Opener-Policy = "same-origin"
+    Cross-Origin-Resource-Policy = "same-origin"
+    Strict-Transport-Security = "max-age=15552000; includeSubDomains; preload"
+
+# لا نُخزّن state.json (دائمًا أحدث قيمة)
+[[headers]]
+  for = "/state.json"
+  [headers.values]
+    Cache-Control = "no-store"
+
+# كاش طويل للملفات الثابتة الشائعة
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*.(png|jpg|jpeg|webp|svg|ico)"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

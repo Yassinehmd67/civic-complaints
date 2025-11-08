@@ -9,12 +9,39 @@ function cors(res) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "GET,OPTIONS",
       "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=60"
+      "Cache-Control": "public, max-age=60",
     },
   };
 }
 
-const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN } = process.env;
+const { REPO_OWNER, REPO_NAME, GITHUB_TOKEN, ORIGIN_WHITELIST } = process.env;
+
+/* ========= تبطيء بسيط لكل IP ========= */
+const RL_WINDOW_MS = 5 * 60 * 1000; // 5 دقائق
+const RL_LIMIT = 180;               // 180 طلبًا لكل 5 دقائق
+const rlMap = new Map();            // ip -> [timestamps]
+function rateHit(ip) {
+  const now = Date.now();
+  const arr = (rlMap.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  arr.push(now);
+  rlMap.set(ip, arr);
+  return arr.length;
+}
+
+/* ========= تحقّق Origin (اختياري) ========= */
+function isOriginAllowed(headers) {
+  if (!ORIGIN_WHITELIST) return true;
+  const allow = ORIGIN_WHITELIST.split(",").map((s) => s.trim()).filter(Boolean);
+  const origin = headers.origin || headers.Origin || "";
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    const host = u.host.toLowerCase();
+    return allow.some((h) => host === h.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 // كاش في الذاكرة (حي طالما لم يحدث cold start)
 const memCache = new Map(); // key -> { etag, data, ts }
@@ -103,6 +130,25 @@ export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
   if (event.httpMethod !== "GET") return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
 
+  // فحص Origin (اختياري)
+  if (!isOriginAllowed(event.headers || {})) {
+    return cors({ statusCode: 403, body: JSON.stringify({ error: "Origin not allowed" }) });
+  }
+
+  // تبطيء حسب IP
+  const ipHeader =
+    event.headers["x-nf-client-connection-ip"] ||
+    event.headers["client-ip"] ||
+    (event.headers["x-forwarded-for"] || "").split(",")[0] ||
+    "unknown";
+
+  if (rateHit(ipHeader) > RL_LIMIT) {
+    return cors({
+      statusCode: 429,
+      body: JSON.stringify({ error: "طلبات كثيرة من نفس العنوان. حاول لاحقًا." }),
+    });
+  }
+
   if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing server env" }) });
   }
@@ -113,13 +159,14 @@ export async function handler(event) {
       topic: event.queryStringParameters?.topic || "",    // يطابق label "topic: ... "
       city:  event.queryStringParameters?.city  || "",    // يطابق label "city: ... "
     };
+    const nocache = event.queryStringParameters?.nocache === "1";
     const key = buildKey(q);
     const cached = memCache.get(key);
-    const etag = cached?.etag;
+    const etag = !nocache ? (cached?.etag) : undefined;
 
     const { notModified, etag: newEtag, items } = await fetchAllApproved(q, etag);
 
-    if (notModified && cached?.data) {
+    if (!nocache && notModified && cached?.data) {
       return cors({ statusCode: 200, body: JSON.stringify(cached.data) });
     }
 

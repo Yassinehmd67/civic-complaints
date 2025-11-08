@@ -23,9 +23,57 @@ const {
   SUPABASE_SERVICE_ROLE,
   SUPABASE_BUCKET,
   SUPABASE_PROOFS_TABLE, // اختياري
+  HCAPTCHA_SECRET,        // مفتاح الخادم hCaptcha
+  ORIGIN_WHITELIST,       // اختياري: example.com,foo.netlify.app
 } = process.env;
 
 const PROOFS_TABLE = SUPABASE_PROOFS_TABLE || "complaint_proofs";
+
+/* ========= تبطيء بسيط لكل IP ========= */
+const RL_WINDOW_MS = 10 * 60 * 1000; // 10 دقائق
+const RL_LIMIT = 20;                  // 20 إرسالًا للشكوى لكل IP ضمن النافذة
+const rlMap = new Map();              // ip -> [timestamps]
+
+function rateHit(ip) {
+  const now = Date.now();
+  const arr = (rlMap.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
+  arr.push(now);
+  rlMap.set(ip, arr);
+  return arr.length;
+}
+
+/* ========= تحقّق hCaptcha ========= */
+async function verifyHCaptcha(token) {
+  if (!HCAPTCHA_SECRET) return false;
+  if (!token || typeof token !== "string" || token.length < 10) return false;
+
+  const res = await fetch("https://hcaptcha.com/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      secret: HCAPTCHA_SECRET,
+      response: token,
+    }),
+  });
+  if (!res.ok) return false;
+  const data = await res.json().catch(() => ({}));
+  return !!data.success;
+}
+
+/* ========= تحقّق Origin (اختياري) ========= */
+function isOriginAllowed(headers) {
+  if (!ORIGIN_WHITELIST) return true;
+  const allow = ORIGIN_WHITELIST.split(",").map((s) => s.trim()).filter(Boolean);
+  const origin = headers.origin || headers.Origin || "";
+  if (!origin) return true;
+  try {
+    const u = new URL(origin);
+    const host = u.host.toLowerCase();
+    return allow.some((h) => host === h.toLowerCase());
+  } catch {
+    return false;
+  }
+}
 
 export async function handler(event) {
   if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
@@ -42,6 +90,25 @@ export async function handler(event) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing Supabase env vars" }) });
   }
 
+  // تحقّق Origin
+  if (!isOriginAllowed(event.headers || {})) {
+    return cors({ statusCode: 403, body: JSON.stringify({ error: "Origin not allowed" }) });
+  }
+
+  // تبطيء حسب IP
+  const ipHeader =
+    event.headers["x-nf-client-connection-ip"] ||
+    event.headers["client-ip"] ||
+    (event.headers["x-forwarded-for"] || "").split(",")[0] ||
+    null;
+
+  if (rateHit(ipHeader || "unknown") > RL_LIMIT) {
+    return cors({
+      statusCode: 429,
+      body: JSON.stringify({ error: "طلبات كثيرة من نفس العنوان. حاول لاحقًا." }),
+    });
+  }
+
   try {
     const p0 = JSON.parse(event.body || "{}");
     const p = {
@@ -51,33 +118,31 @@ export async function handler(event) {
       category: (p0.category || "").trim(),
       place: (p0.place || "").trim(),
       summary: (p0.summary || "").trim(),
-      proofPath: (p0.proofPath || "").trim(),
-      proofUrl: (p0.proofUrl || "").trim(), // رابط موقّت من الواجهة
+      proofPath: (p0.proofPath || "").trim(), // مسار داخل البكت (بدون اسم البكت)
+      hcaptchaToken: (p0.hcaptchaToken || "").trim(),
     };
+
+    // hCaptcha إلزامي
+    const okCaptcha = await verifyHCaptcha(p.hcaptchaToken);
+    if (!okCaptcha) {
+      return cors({ statusCode: 400, body: JSON.stringify({ error: "فشل التحقق من hCaptcha" }) });
+    }
 
     // التحقق
     const errs = [];
-    if (!p.fullName || p.fullName.length < 8) errs.push("الاسم الكامل مطلوب.");
+    if (!p.fullName || p.fullName.length < 8) errs.push("الاسم الكامل مطلوب (≥ 8 أحرف).");
     if (!p.submittedDate) errs.push("تاريخ تقديم الشكوى مطلوب.");
     if (!p.category) errs.push("نوع الشكوى مطلوب.");
     if (!p.summary || p.summary.length < 120) errs.push("الملخص قصير جدًا (≥ 120 حرفًا).");
-
-    // قبول proofPath أو استخراجه من signed URL
-    let proofPath = p.proofPath;
-    if (!proofPath && p.proofUrl) {
-      const m =
-        p.proofUrl.match(/\/object\/sign\/([^/]+)\/(.+?)\?(?:.*)$/) ||
-        p.proofUrl.match(/\/sign\/([^/]+)\/(.+?)\?(?:.*)$/);
-      if (m && m[1] && m[2]) {
-        if (!SUPABASE_BUCKET || m[1] === SUPABASE_BUCKET) {
-          proofPath = decodeURIComponent(m[2]);
-        }
-      }
-    }
-    if (!proofPath) errs.push("يجب رفع وثيقة/صورة الشكوى الموقّعة.");
-
+    if (!p.proofPath) errs.push("يجب رفع وثيقة/صورة الشكوى الموقّعة.");
     if (errs.length) {
       return cors({ statusCode: 422, body: JSON.stringify({ error: errs.join(" ") }) });
+    }
+
+    // منع تمرير اسم البكت في المسار (يجب أن يكون داخليًا فقط)
+    const normalizedPath = String(p.proofPath).replace(/^\/+/, "");
+    if (normalizedPath.includes("..") || normalizedPath.startsWith(SUPABASE_BUCKET + "/")) {
+      return cors({ statusCode: 400, body: JSON.stringify({ error: "مسار المرفق غير صالح." }) });
     }
 
     const showName = p.showName === "yes";
@@ -119,15 +184,10 @@ export async function handler(event) {
     // 2) تخزين المسار سرًا في Supabase
     try {
       const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
-      const ipHeader =
-        event.headers["x-nf-client-connection-ip"] ||
-        event.headers["client-ip"] ||
-        (event.headers["x-forwarded-for"] || "").split(",")[0] ||
-        null;
 
       const { error: insertErr } = await sb.from(PROOFS_TABLE).insert({
         issue_number: issue.number,
-        proof_path: proofPath,
+        proof_path: normalizedPath,
         uploader_ip: ipHeader || null,
       });
       if (insertErr) {

@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>حول المنصة | منصة الشكايات والتقارير</title>
   <meta name="description" content="تعرف على أهداف منصة الشكايات والتقارير وسياستها القانونية والخصوصية.">
+
+  <!-- Content Security Policy (CSP) -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self';
+                 img-src 'self' https://cdn-icons-png.flaticon.com data:;
+                 style-src 'self' 'unsafe-inline';
+                 script-src 'self';
+                 connect-src 'self';
+                 frame-src 'none';
+                 object-src 'none';
+                 base-uri 'none';
+                 form-action 'self';
+                 upgrade-insecure-requests">
+
   <style>
     :root { --gap: 14px; }
     body{font-family:system-ui,Arial;max-width:960px;margin:24px auto;padding:0 12px;line-height:1.9;background:#fff;color:#111}
@@ -14,7 +28,7 @@
     .btn{padding:10px 14px;border-radius:12px;background:#111;color:#fff;text-decoration:none}
     .card{border:1px solid #e6e6e6;border-radius:14px;background:#fff;padding:16px;margin:14px 0}
     h1,h2{margin:6px 0 10px}
-    .muted{color:#eee}
+    .muted{color:#777} /* أوضح من #eee على خلفية بيضاء */
     ul{margin:8px 0 0 0;padding:0 20px}
     .note{background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px;margin-top:8px}
     footer{margin-top:18px;color:#666;text-align:center}
@@ -30,10 +44,7 @@
       text-align:center;
       color:#fff;
     }
-    .title-card h1 {
-      margin:0;
-      color:#fff;
-    }
+    .title-card h1 { margin:0; color:#fff; }
     .section-title {
       background:#f9f9f9;
       border:1px solid #ddd;
@@ -49,7 +60,7 @@
     .telegram-float{
       position:fixed;
       bottom:16px;
-      left:16px;
+      right:16px; /* نقلناها للزاوية اليمنى لتناسب RTL */
       z-index:999;
       background:#0F3D5E;
       border-radius:50%;
@@ -151,7 +162,7 @@
 </footer>
 
 <!-- أيقونة تيلجرام -->
-<a href="https://t.me/chikayalive" target="_blank" class="telegram-float" title="تابعنا على تيلجرام">
+<a href="https://t.me/chikayalive" target="_blank" rel="noopener" class="telegram-float" title="تابعنا على تيلجرام">
   <img src="https://cdn-icons-png.flaticon.com/512/2111/2111646.png" alt="Telegram"/>
 </a>
 

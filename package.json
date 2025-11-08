@@ -1,8 +1,21 @@
 {
+  "name": "civic-complaints",
+  "version": "1.0.0",
+  "description": "منصة الشكايات والتقارير - Netlify Functions + Supabase + GitHub Issues",
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.57.2",
     "bcryptjs": "^3.0.2",
     "busboy": "^1.6.0"
-  }
+  },
+  "scripts": {
+    "start": "netlify dev",
+    "build": "echo 'Static build handled by Netlify'",
+    "test": "echo 'No tests specified' && exit 0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "author": "منصة الشكايات والتقارير",
+  "license": "MIT"
 }

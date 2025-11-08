@@ -4,6 +4,19 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>لوحة الإدارة</title>
+
+  <!-- Content Security Policy مبسّطة -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://js.hcaptcha.com https://hcaptcha.com;
+    connect-src 'self' https://api.github.com https://hcaptcha.com https://*.hcaptcha.com;
+    img-src 'self' data: https:;
+    style-src 'self' 'unsafe-inline';
+    frame-src https://hcaptcha.com https://*.hcaptcha.com;
+    base-uri 'self';
+    form-action 'self';
+  ">
+
   <style>
     body{font-family:system-ui,Arial;max-width:820px;margin:24px auto;padding:0 12px;line-height:1.8;background:#fff;color:#111}
     h1{margin:0 0 12px}
@@ -20,12 +33,15 @@
     .badge{display:inline-block;background:#f3f3f3;border:1px solid #e6e6e6;border-radius:999px;padding:2px 10px;font-size:.85em;margin-inline:4px 0}
     .tiny{font-size:.9em}
   </style>
+
+  <!-- hCaptcha (render=explicit للحصول على widgetId) -->
+  <script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoad&render=explicit" async defer></script>
 </head>
 <body>
   <h1>لوحة الإدارة</h1>
   <p class="muted tiny">
     لتغيير حالة الشكايات/التقارير. التحقق يتم على الخادم عبر <b>Bcrypt</b> باستخدام
-    <code>ADMIN_HASH</code> المخزن في متغيرات بيئة Netlify.
+    <code>ADMIN_HASH</code> في متغيرات بيئة Netlify. وتم تفعيل <b>hCaptcha</b> لحماية الاستدعاءات.
   </p>
 
   <div class="card" id="adminCard">
@@ -65,6 +81,13 @@
     <label for="adminPassword">كلمة السر</label>
     <input id="adminPassword" type="password" placeholder="••••••••" autocomplete="current-password" />
 
+    <!-- hCaptcha (إلزامي قبل الإجراءات الإدارية) -->
+    <div class="card" style="margin-top:10px">
+      <div class="tiny muted" style="margin-bottom:6px">تحقق الحماية:</div>
+      <div id="captcha-admin"></div>
+      <div class="tiny muted">يجب حلّ hCaptcha قبل تنفيذ أي إجراء.</div>
+    </div>
+
     <div class="row">
       <button id="applyBtn">تطبيق الحالة</button>
       <span id="status" class="muted"></span>
@@ -72,6 +95,10 @@
   </div>
 
 <script>
+/* === إعدادات === */
+const HCAPTCHA_SITE_KEY = "8f262b7a-face-428c-a24c-91c438fa76d4";
+let captchaAdminId = null;
+
 /* === استخدم مسار وظائف نسبي ليعمل محليًا وعلى Netlify === */
 const FN_BASE = "/.netlify/functions";
 
@@ -88,6 +115,25 @@ function prettyStatus(labels){
 }
 function safeJson(text){
   try{ return JSON.parse(text) } catch{ return null }
+}
+
+/* hCaptcha onload */
+window.onHCaptchaLoad = function onHCaptchaLoad(){
+  try {
+    if (document.getElementById("captcha-admin")) {
+      captchaAdminId = hcaptcha.render("captcha-admin", { sitekey: HCAPTCHA_SITE_KEY });
+    }
+  } catch(e) {
+    console.warn("hCaptcha render failed:", e);
+  }
+};
+function getAdminCaptchaToken(){
+  if (!window.hcaptcha || captchaAdminId == null) return null;
+  const t = hcaptcha.getResponse(captchaAdminId);
+  return t && t.length ? t : null;
+}
+function resetAdminCaptcha(){
+  if (window.hcaptcha && captchaAdminId != null) hcaptcha.reset(captchaAdminId);
 }
 
 /* عناصر DOM */
@@ -173,7 +219,7 @@ checkBtn.addEventListener("click", async ()=>{
   }
 });
 
-/* زر: تطبيق الحالة */
+/* زر: تطبيق الحالة (يتطلب hCaptcha) */
 applyBtn.addEventListener("click", async ()=>{
   const number = Number(issueNumberEl.value);
   const state  = newStatusEl.value;
@@ -181,6 +227,13 @@ applyBtn.addEventListener("click", async ()=>{
 
   if(!number || !state || !pass){
     statusEl.textContent = "❗ أكمل الحقول.";
+    statusEl.className = "error";
+    return;
+  }
+
+  const token = getAdminCaptchaToken();
+  if (!token) {
+    statusEl.textContent = "يرجى إكمال hCaptcha أولًا.";
     statusEl.className = "error";
     return;
   }
@@ -193,7 +246,7 @@ applyBtn.addEventListener("click", async ()=>{
     const r = await fetch(`${FN_BASE}/adminSetStatus`, {
       method: "POST",
       headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ number, state, password: pass })
+      body: JSON.stringify({ number, state, password: pass, hcaptchaToken: token })
     });
     const txt = await r.text();
     if(!r.ok){
@@ -204,8 +257,6 @@ applyBtn.addEventListener("click", async ()=>{
 
     statusEl.textContent = "✅ تم التحديث بنجاح.";
     statusEl.className = "success";
-    // يمكن مسح كلمة السر بعد النجاح أو إبقاءها لاستخدام زر المرفق
-    // adminPasswordEl.value = "";
 
     // تحديث صندوق الحالة الحالية مباشرة
     checkBtn.click();
@@ -214,38 +265,43 @@ applyBtn.addEventListener("click", async ()=>{
     statusEl.className = "error";
   }finally{
     applyBtn.disabled = false;
+    resetAdminCaptcha();
   }
 });
 
-/* زر: عرض المرفق الداخلي (يستدعي getProofLink) */
+/* زر: عرض المرفق الداخلي (يتطلب hCaptcha) */
 proofBtn.addEventListener("click", async ()=>{
   const number = Number(issueNumberEl.value);
-  const pass = adminPasswordEl.value; // أو استخدم X-Admin-Key في الهيدر بدل كلمة السر
+  const pass = adminPasswordEl.value;
   if(!number){
     proofStatus.textContent = "أدخل رقم ملف صالح أولًا.";
     proofStatus.className = "error tiny";
     return;
   }
+  const token = getAdminCaptchaToken();
+  if (!token) {
+    proofStatus.textContent = "يرجى إكمال hCaptcha أولًا.";
+    proofStatus.className = "error tiny";
+    return;
+  }
+
   proofBtn.disabled = true;
   proofStatus.textContent = "جارٍ توليد الرابط…";
   proofStatus.className = "muted tiny";
   try{
     const r = await fetch(`${FN_BASE}/getProofLink`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        // لاستخدام مفتاح ثابت بدل كلمة السر (اختياري):
-        // "X-Admin-Key": "ضع_القيمة_السرية_إن_استخدمت_ADMIN_KEY"
-      },
-      body: JSON.stringify({ issueNumber: number, password: pass })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ issueNumber: number, password: pass, hcaptchaToken: token })
     });
     const t = await r.text();
     if(!r.ok){ throw new Error(t || r.statusText); }
     const d = safeJson(t) || {};
-    if(d.signedUrl){
+    const signed = d.signedUrl || d.url;
+    if(signed){
       proofStatus.textContent = "تم إنشاء الرابط. يُفتح في لسان جديد.";
       proofStatus.className = "success tiny";
-      window.open(d.signedUrl, "_blank", "noopener");
+      window.open(signed, "_blank", "noopener");
     }else{
       proofStatus.textContent = "تعذّر إنشاء الرابط.";
       proofStatus.className = "error tiny";
@@ -255,6 +311,7 @@ proofBtn.addEventListener("click", async ()=>{
     proofStatus.className = "error tiny";
   }finally{
     proofBtn.disabled = false;
+    resetAdminCaptcha();
   }
 });
 

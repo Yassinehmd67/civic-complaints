@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>منصة الشكايات والتقارير</title>
   <meta name="description" content="توثيق الشكايات والتقارير الجماعية مع شهادات داعمة وملفات موقعة.">
+
+  <!-- Content Security Policy (مبسّطة مع السماح بـ inline لتوافق الكود الحالي) -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://js.hcaptcha.com https://hcaptcha.com https://esm.sh;
+    connect-src 'self' https://api.github.com https://hcaptcha.com https://*.hcaptcha.com https://*.supabase.co https://*.netlify.app;
+    img-src 'self' data: https:;
+    style-src 'self' 'unsafe-inline';
+    font-src 'self' data:;
+    frame-src https://hcaptcha.com https://*.hcaptcha.com;
+    base-uri 'self';
+    form-action 'self';
+  ">
+
   <style>
     :root { --gap: 14px; }
     body{font-family:system-ui,Arial;max-width:1100px;margin:24px auto;padding:0 12px;line-height:1.8;background:#fff}
@@ -48,6 +62,9 @@
     .telegram-fab:hover { background:#006fa1 }
     @keyframes pulse { 0%{transform:scale(1)} 50%{transform:scale(1.1)} 100%{transform:scale(1)} }
   </style>
+
+  <!-- hCaptcha (نستخدم render=explicit لالتقاط widgetId لكل نموذج) -->
+  <script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoad&render=explicit" async defer></script>
 </head>
 <body>
 <header>
@@ -62,7 +79,7 @@
     <a id="toComplaints" class="nav-btn">➕ شكوى</a>
     <a id="toReports" class="nav-btn">📑 تقرير</a>
     <a href="about.html" class="nav-btn">ℹ️ حول المنصة</a>
-    <a id="toDonations" class="nav-btn">💙 التبرعات</a>
+    <a id="toDonations" class="nav-btn">⚖️ التبرعات</a>
   </nav>
 </header>
 
@@ -73,7 +90,7 @@
     <button class="tab-btn" data-tab="complaintsListTab">الشكايات المنشورة</button>
     <button class="tab-btn" data-tab="reportsListTab">التقارير المنشورة</button>
     <button class="tab-btn" data-tab="statusTab">تتبع الحالة</button>
-    <button class="tab-btn" data-tab="donationsTab">💙 التبرعات</button>
+    <button class="tab-btn" data-tab="donationsTab">💰 التبرعات</button>
   </section>
 
   <!-- تتبع الحالة -->
@@ -113,6 +130,10 @@
       <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
       <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
       <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
+
+      <!-- hCaptcha للشكوى -->
+      <div id="captcha-complaint" style="margin-top:10px"></div>
+
       <div class="row">
         <button type="submit" class="btn">إرسال الشكوى</button>
         <span id="complaintStatus" class="muted"></span>
@@ -140,6 +161,10 @@
       <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
       <label>روابط أدلة (اختياري)</label>
       <input name="evidenceUrl" type="url" placeholder="https://..." />
+
+      <!-- hCaptcha للتقرير -->
+      <div id="captcha-report" style="margin-top:10px"></div>
+
       <div class="row">
         <button type="submit" class="btn">إرسال التقرير</button>
         <span id="reportStatus" class="muted"></span>
@@ -234,6 +259,27 @@ const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const SUPABASE_BUCKET = "proofs";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
 
+/* مفاتيح hCaptcha (واجهة فقط) */
+const HCAPTCHA_SITE_KEY = "8f262b7a-face-428c-a24c-91c438fa76d4";
+
+/* يتم ملؤها عند تحميل hCaptcha */
+let capComplaintId = null;
+let capReportId = null;
+
+/* hCaptcha onload callback (من خلال بارامتر onload) */
+window.onHCaptchaLoad = function onHCaptchaLoad(){
+  try {
+    if (document.getElementById("captcha-complaint")) {
+      capComplaintId = hcaptcha.render("captcha-complaint", { sitekey: HCAPTCHA_SITE_KEY });
+    }
+    if (document.getElementById("captcha-report")) {
+      capReportId = hcaptcha.render("captcha-report", { sitekey: HCAPTCHA_SITE_KEY });
+    }
+  } catch(e) {
+    console.warn("hCaptcha render failed:", e);
+  }
+};
+
 /* تبويبات */
 const tabs = document.querySelectorAll(".tab-btn");
 tabs.forEach(btn=>btn.onclick=()=>{
@@ -308,6 +354,9 @@ function cardFor(issue, type){
   const content = (type==="complaint") ? (summaryText || "—") : excerpt;
   const badgeType = (type==="complaint") ? "شكوى (ملخص)" : "تقرير";
 
+  const liked = localStorage.getItem(`liked:${number}`) === "1";
+  const likeBtnAttr = liked ? 'disabled aria-disabled="true"' : '';
+
   return `
   <article class="card" id="card-${number}">
     <div class="row">
@@ -321,7 +370,7 @@ function cardFor(issue, type){
     <p>${escapeHtml(content)}</p>
 
     <div class="actions">
-      <button class="pill" onclick="upvote(${number})">ضمّ صوتي (إعجاب)</button>
+      <button class="pill" id="like-${number}" ${likeBtnAttr} onclick="upvote(${number})">${liked ? "تم احتساب صوتك" : "ضمّ صوتي (إعجاب)"}</button>
       <a class="pill" href="${url}" target="_blank" rel="noopener">فتح على GitHub</a>
       <a class="pill" href="${url}#new_comment_field" target="_blank" rel="noopener">فتح التعليقات</a>
     </div>
@@ -332,7 +381,11 @@ function cardFor(issue, type){
         <label>الاسم الكامل</label>
         <input name="fullName" required />
         <label>التعليق/الشهادة</label>
-        <textarea name="comment" rows="4" required></textarea>
+        <textarea name="comment" rows="4" required minlength="40"></textarea>
+
+        <!-- hCaptcha للتعليقات (يتم render عند الربط) -->
+        <div class="comment-captcha" style="margin:8px 0"></div>
+
         <div class="row">
           <button type="submit" class="btn">إرسال التعليق</button>
           <span class="muted status"></span>
@@ -366,7 +419,7 @@ async function fetchApprovedSmart(filters = {}) {
   let items = [];
 
   if (onNetlify) {
-    // لو أضفت لاحقًا listApproved كوكيل
+    // وكيل Netlify
     const params = new URLSearchParams();
     if (filters.type)  params.set("type",  filters.type);
     if (filters.topic) params.set("topic", filters.topic);
@@ -441,9 +494,18 @@ async function renderReports(){
   }
 }
 
-/* نماذج التعليقات */
+/* نماذج التعليقات + hCaptcha */
 function bindCommentForms(scope=document){
   scope.querySelectorAll(".comment-form").forEach(form=>{
+    // Render hCaptcha داخل كل نموذج تعليق (مرة واحدة)
+    const capHost = form.querySelector(".comment-captcha");
+    if (capHost && !capHost.dataset.widgetId && window.hcaptcha && HCAPTCHA_SITE_KEY) {
+      try {
+        const widgetId = hcaptcha.render(capHost, { sitekey: HCAPTCHA_SITE_KEY });
+        capHost.dataset.widgetId = String(widgetId);
+      } catch {}
+    }
+
     form.addEventListener("submit", async (e)=>{
       e.preventDefault();
       const fd = new FormData(form);
@@ -452,6 +514,18 @@ function bindCommentForms(scope=document){
         fullName: fd.get("fullName"),
         comment: fd.get("comment")
       };
+
+      // التحقق من hCaptcha للتعليق
+      const capDiv = form.querySelector(".comment-captcha");
+      const widgetId = capDiv && capDiv.dataset.widgetId ? Number(capDiv.dataset.widgetId) : null;
+      const token = (window.hcaptcha && widgetId != null) ? hcaptcha.getResponse(widgetId) : null;
+      if (!token) {
+        const s = form.querySelector(".status");
+        s.textContent = "يرجى إكمال hCaptcha أولًا.";
+        return;
+      }
+      payload.hcaptchaToken = token;
+
       const status = form.querySelector(".status");
       status.textContent = "جارٍ الإرسال…";
       try{
@@ -462,6 +536,8 @@ function bindCommentForms(scope=document){
         status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
         if(r.ok){
           form.reset();
+          // إعادة ضبط hCaptcha للتعليقات
+          if (widgetId != null && window.hcaptcha) hcaptcha.reset(widgetId);
           const c = document.getElementById(`c-${payload.issueNumber}`);
           if(c) c.textContent = String(Number(c.textContent||"0")+1);
         }
@@ -470,9 +546,17 @@ function bindCommentForms(scope=document){
   });
 }
 
-/* زر الإعجاب */
-async function upvote(issueNumber){
-  const btn = document.querySelector(`#card-${issueNumber} button`);
+/* زر الإعجاب مع منع التكرار عبر localStorage */
+window.upvote = async function upvote(issueNumber){
+  const key = `liked:${issueNumber}`;
+  const btn = document.getElementById(`like-${issueNumber}`);
+  if (localStorage.getItem(key) === "1") {
+    btn.textContent = "تم احتساب صوتك";
+    btn.disabled = true;
+    btn.setAttribute("aria-disabled", "true");
+    alert("تم احتساب صوتك ✅");
+    return;
+  }
   btn.disabled = true;
   try{
     const r = await fetch(`${FN_BASE}/upvoteIssue`, {
@@ -482,18 +566,21 @@ async function upvote(issueNumber){
     if(r.ok){
       const l = document.getElementById(`l-${issueNumber}`);
       if(l) l.textContent = String(Number(l.textContent||"0")+1);
-      alert("تم ضمّ صوتك. شكرًا!");
+      localStorage.setItem(key, "1");
+      btn.textContent = "تم احتساب صوتك";
+      btn.setAttribute("aria-disabled", "true");
+      alert("تم احتساب صوتك ✅");
     }else{
+      btn.disabled = false;
       alert("تعذّر تسجيل الإعجاب الآن.");
     }
   }catch(e){
-    alert("تعذّر تسجيل الإعجاب.");
-  }finally{
     btn.disabled = false;
+    alert("تعذّر تسجيل الإعجاب.");
   }
 }
 
-/* --- إرسال الشكوى: رفع مباشر + إرسال proofPath فقط --- */
+/* --- إرسال الشكوى: تذكرة رفع (مع hCaptcha) + رفع مباشر + إرسال proofPath فقط --- */
 document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -506,23 +593,27 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   if(!file || file.size===0){ status.textContent = "الملف الموقّع مطلوب."; return; }
   if(file.size > 10*1024*1024){ status.textContent = "حجم الملف أكبر من 10MB."; return; }
 
+  // hCaptcha token للشكوى
+  const token = (window.hcaptcha && capComplaintId!=null) ? hcaptcha.getResponse(capComplaintId) : null;
+  if (!token) { status.textContent = "يرجى إكمال hCaptcha أولًا."; return; }
+
   let proofPath = "";
   try{
-    // 1) تذكرة رفع
+    // 1) تذكرة رفع (تمرير نوع، حجم، ورمز hCaptcha)
     const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ mime: file.type || "application/pdf" })
+      body: JSON.stringify({ mime: file.type || "application/pdf", size: file.size, hcaptchaToken: token })
     });
     if(!tkRes.ok){
       const t = await tkRes.text();
       throw new Error("فشل تحضير تذكرة الرفع: " + t);
     }
-    const { path, token } = await tkRes.json();
+    const { path, token: signedToken } = await tkRes.json();
 
     // 2) الرفع المباشر فقط
     const up = await supabase.storage.from(SUPABASE_BUCKET)
-      .uploadToSignedUrl(path, token, file, {
+      .uploadToSignedUrl(path, signedToken, file, {
         upsert:false,
         contentType: file.type || "application/octet-stream"
       });
@@ -535,7 +626,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     return;
   }
 
-  // 3) إرسال بيانات الشكوى (نرسل المسار فقط)
+  // 3) إرسال بيانات الشكوى (نرسل المسار فقط) + hCaptcha
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -543,7 +634,8 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     category: fd.get("category"),
     place: fd.get("place"),
     summary: fd.get("summary"),
-    proofPath
+    proofPath,
+    hcaptchaToken: token
   };
 
   try{
@@ -562,6 +654,9 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
 
+    // إعادة ضبط Captcha
+    if (window.hcaptcha && capComplaintId!=null) hcaptcha.reset(capComplaintId);
+
     // افتح تبويب تتبع الحالة وجهّز الرقم
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
@@ -571,7 +666,7 @@ document.getElementById("complaintForm").addEventListener("submit", async (e)=>{
   }
 });
 
-/* إرسال التقرير */
+/* إرسال التقرير (+ hCaptcha) */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form = e.target;
@@ -580,13 +675,18 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   const status = document.getElementById("reportStatus");
   status.textContent = "جارٍ الإرسال…";
 
+  // hCaptcha token للتقرير
+  const token = (window.hcaptcha && capReportId!=null) ? hcaptcha.getResponse(capReportId) : null;
+  if (!token) { status.textContent = "يرجى إكمال hCaptcha أولًا."; return; }
+
   const payload = {
     fullName: fd.get("fullName"),
     eventDateTime: fd.get("eventDateTime"),
     place: fd.get("place"),
     category: fd.get("category"),
     body: fd.get("body"),
-    evidenceUrl: fd.get("evidenceUrl")
+    evidenceUrl: fd.get("evidenceUrl"),
+    hcaptchaToken: token
   };
   try{
     const r = await fetch(`${FN_BASE}/submitReport`, {
@@ -603,6 +703,9 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
 
+    // إعادة ضبط Captcha
+    if (window.hcaptcha && capReportId!=null) hcaptcha.reset(capReportId);
+
     // افتح تبويب تتبع الحالة
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
@@ -613,15 +716,22 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
 });
 
 /* تتبع الحالة */
-document.getElementById("trackBtn").addEventListener("click", async ()=>{
+document.getElementById("trackBtn").addEventListener("click", async () => {
   const num = Number(document.getElementById("trackNumber").value);
   const box = document.getElementById("trackResult");
-  if(!num){ box.innerHTML = "<p class='muted'>أدخل رقمًا صحيحًا.</p>"; return; }
+  if (!num) { box.innerHTML = "<p class='muted'>أدخل رقمًا صحيحًا.</p>"; return; }
   box.innerHTML = "<p class='muted'>… جارٍ الاستعلام</p>";
-  try{
+  try {
     const r = await fetch(`${FN_BASE}/getStatus?number=${num}`);
-    if(!r.ok){ box.innerHTML = "<p class='muted'>تعذّر قراءة الحالة.</p>"; return; }
+    if (!r.ok) { box.innerHTML = "<p class='muted'>تعذّر قراءة الحالة.</p>"; return; }
     const d = await r.json();
+
+    // عرض التاريخ وفق المنطقة الزمنية المحسوبة من state.json (افتراضي: Africa/Casablanca)
+    const _tz = window.__appTZ || "Africa/Casablanca";
+    const createdStr = new Intl.DateTimeFormat("ar-MA", {
+      timeZone: _tz, year: "numeric", month: "2-digit", day: "2-digit"
+    }).format(new Date(d.created_at));
+
     box.innerHTML = `
       <div class="card">
         <div class="row">
@@ -631,13 +741,13 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
           ${d.city?`<span class="badge">المكان: ${escapeHtml(d.city)}</span>`:""}
         </div>
         <h3 style="margin:6px 0 0">${escapeHtml(d.title)}</h3>
-        <div class="muted">${new Date(d.created_at).toLocaleDateString()} • الحالة: <b>${statusLabel(d.labels)}</b></div>
+        <div class="muted">${createdStr} • الحالة: <b>${statusLabel(d.labels)}</b></div>
         <p>${escapeHtml(d.display)}</p>
         <div class="row">
           <a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a>
         </div>
       </div>`;
-  }catch(e){
+  } catch {
     box.innerHTML = "<p class='muted'>حصل خطأ أثناء الاستعلام.</p>";
   }
 });
@@ -652,5 +762,62 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
   }
 })();
 </script>
-</body>
+
+<script>
+(async function prefillUX(){
+  // 1) قراءة state.json إن وُجد
+  let city = "", tz = "Africa/Casablanca";
+  try {
+    const r = await fetch("./state.json", { cache: "no-store" });
+    if (r.ok) {
+      const s = await r.json();
+      city = s?.geolocation?.data?.city || "";
+      tz   = s?.geolocation?.data?.timezone || tz;
+    }
+  } catch {} 
+  finally {
+    // خزّن الـTZ النهائي عالميًا بعد الحسم
+    window.__appTZ = tz;
+  }
+
+  // 2) ملء حقل المكان افتراضيًا (الشكوى/التقرير) إن كان فارغًا
+  const placeInputs = [
+    document.querySelector('#complaintForm input[name="place"]'),
+    document.querySelector('#reportForm    input[name="place"]')
+  ].filter(Boolean);
+  if (city) {
+    placeInputs.forEach(el => { if (el && !el.value) el.value = city; });
+  }
+
+  // 3) ضبط تاريخ الشكوى لليوم الحالي وفق المنطقة الزمنية
+  try {
+    const dt = new Date();
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(dt);
+    const yyyy = parts.find(p => p.type === 'year')?.value || String(dt.getFullYear());
+    const mm   = parts.find(p => p.type === 'month')?.value || String(dt.getMonth() + 1).padStart(2, '0');
+    const dd   = parts.find(p => p.type === 'day')?.value || String(dt.getDate()).padStart(2, '0');
+    const today = `${yyyy}-${mm}-${dd}`;
+    const dateEl = document.querySelector('#complaintForm input[name="submittedDate"]');
+    if (dateEl && !dateEl.value) dateEl.value = today;
+  } catch {}
+
+  // 4) إظهار ملاحظة صغيرة بالتوقيت المحلي أعلى الصفحة (اختياري)
+  try {
+    const note = document.createElement('div');
+    note.className = 'muted';
+    note.style.margin = '6px 0';
+    note.textContent = `التوقيت المحلي المعتمد: ${tz}${city ? ` • المدينة المقترحة: ${city}` : ''}`;
+    document.querySelector('header')?.appendChild(note);
+  } catch {}
+
+  // 5) تمرير المدينة افتراضيًا لكل استدعاءات fetchApprovedSmart دون تعديل بقية الكود
+  if (typeof window.fetchApprovedSmart === 'function' && city) {
+    const _orig = window.fetchApprovedSmart;
+    window.fetchApprovedSmart = (filters = {}) => _orig({ city, ...filters });
+  }
+})();
+</script>
+</body> 
 </html>

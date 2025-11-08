@@ -1,23 +1,126 @@
 <!doctype html>
 <meta charset="utf-8">
-<title>رفع اختبار</title>
-<h1>اختبار رفع إلى Supabase عبر Netlify Function</h1>
-<form id="f" enctype="multipart/form-data" method="post">
-  <input type="file" name="file" accept=".pdf,image/png,image/jpeg" required>
-  <button>رفع</button>
-</form>
-<pre id="out"></pre>
-<script>
-const FN = "/.netlify/functions/uploadProof";
-f.onsubmit = async (e)=>{
-  e.preventDefault();
-  out.textContent = "جارٍ الرفع...";
-  try {
-    const r = await fetch(FN, { method:"POST", body:new FormData(f) });
-    const t = await r.text();
-    out.textContent = t;
-  } catch(err) {
-    out.textContent = "خطأ: " + err.message;
-  }
-};
+<title>اختبار رفع إلى Supabase عبر تذكرة موقّعة</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<style>
+  body{font-family:system-ui,Arial;max-width:720px;margin:24px auto;padding:0 12px;line-height:1.8;color:#111}
+  .card{border:1px solid #e6e6e6;border-radius:12px;padding:16px;margin:14px 0;background:#fff}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  label{display:block;margin:8px 0 4px}
+  input[type=file]{padding:10px;border:1px solid #ccc;border-radius:10px;width:100%}
+  button{padding:10px 14px;border:0;border-radius:10px;background:#111;color:#fff;cursor:pointer}
+  .muted{color:#666}
+  pre{white-space:pre-wrap;background:#fafafa;border:1px dashed #ddd;border-radius:10px;padding:10px}
+</style>
+
+<h1>اختبار الرفع بتذكرة موقّعة (Netlify → Supabase)</h1>
+<p class="muted">
+  هذه الصفحة الاختبارية تستدعي <code>/.netlify/functions/getUploadTicket</code> بعد اجتياز hCaptcha،
+  ثم ترفع الملف مباشرة إلى Supabase باستخدام <b>uploadToSignedUrl</b>.
+</p>
+
+<div class="card">
+  <form id="f">
+    <label>اختر ملفًا (PDF/PNG/JPG ≤ 10MB)</label>
+    <input id="file" type="file" accept=".pdf,image/png,image/jpeg" required>
+    <div id="captcha" style="margin:10px 0"></div>
+    <div class="row">
+      <button type="submit">رفع</button>
+      <span id="status" class="muted"></span>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3 style="margin:0">الاستجابة</h3>
+  <pre id="out">—</pre>
+</div>
+
+<!-- Supabase (عمومي) -->
+<script type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  // === ضبط مشروعك (مطابق لـ index.html) ===
+  const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWFlZmZoeWdwa3preWNoZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwOTY0MzgsImV4cCI6MjA3MjY3MjQzOH0.N1Bfhu3bdAfberMBe1aK2xXVxr0xK42hlTlo7mM4uWE";
+  const SUPABASE_BUCKET = "proofs";
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+  // قاعدة وظائف السيرفر (تلقائيًا تعمل محليًا وعلى Netlify)
+  const FN_BASE = location.hostname.endsWith(".netlify.app")
+    ? "/.netlify/functions"
+    : "https://delicate-maamoul-683849.netlify.app/.netlify/functions";
+
+  // hCaptcha
+  const HCAPTCHA_SITE_KEY = "8f262b7a-face-428c-a24c-91c438fa76d4";
+  let widgetId = null;
+
+  window.onHCaptchaLoad = function(){
+    try { widgetId = hcaptcha.render("captcha", { sitekey: HCAPTCHA_SITE_KEY }); }
+    catch(e){ console.warn("hCaptcha render failed:", e); }
+  };
+
+  // عناصر DOM
+  const form = document.getElementById("f");
+  const fileEl = document.getElementById("file");
+  const statusEl = document.getElementById("status");
+  const out = document.getElementById("out");
+
+  const ALLOWED = new Set(["application/pdf","image/png","image/jpeg"]);
+  const MAX_BYTES = 10 * 1024 * 1024;
+
+  form.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    out.textContent = "—";
+    statusEl.textContent = "جارٍ التحضير…";
+
+    const file = fileEl.files && fileEl.files[0];
+    if(!file){ statusEl.textContent = "اختر ملفًا."; return; }
+    if(!ALLOWED.has(file.type)){ statusEl.textContent = "نوع ملف غير مسموح."; return; }
+    if(file.size <= 0 || file.size > MAX_BYTES){ statusEl.textContent = "الحجم يتجاوز 10MB."; return; }
+
+    // hCaptcha token
+    const token = (window.hcaptcha && widgetId!=null) ? hcaptcha.getResponse(widgetId) : null;
+    if(!token){ statusEl.textContent = "يرجى إكمال hCaptcha أولًا."; return; }
+
+    try{
+      // 1) تذكرة رفع
+      const tk = await fetch(`${FN_BASE}/getUploadTicket`, {
+        method:"POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mime: file.type, size: file.size, hcaptchaToken: token })
+      });
+      const tkTxt = await tk.text();
+      if(!tk.ok) throw new Error(tkTxt || tk.statusText);
+      const { path, token: signedToken, uploadUrl, expiresAt, maxBytes } = JSON.parse(tkTxt);
+
+      // 2) الرفع إلى الرابط الموقّع
+      statusEl.textContent = "جارٍ الرفع…";
+      const up = await supabase.storage.from(SUPABASE_BUCKET)
+        .uploadToSignedUrl(path, signedToken, file, {
+          upsert: false,
+          contentType: file.type || "application/octet-stream"
+        });
+
+      if (up.error) throw up.error;
+
+      statusEl.textContent = "تم الرفع بنجاح ✅";
+      out.textContent = JSON.stringify(
+        { ok:true, path, expiresAt, uploadUrl, maxBytes },
+        null, 2
+      );
+
+      // إعادة ضبط الكابتشا (اختياري)
+      if (window.hcaptcha && widgetId!=null) hcaptcha.reset(widgetId);
+      form.reset();
+
+    }catch(err){
+      statusEl.textContent = "فشل الرفع";
+      out.textContent = String(err?.message || err);
+    }
+  });
 </script>
+
+<!-- hCaptcha -->
+<script src="https://js.hcaptcha.com/1/api.js?onload=onHCaptchaLoad&render=explicit" async defer></script>
