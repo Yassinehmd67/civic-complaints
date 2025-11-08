@@ -172,36 +172,6 @@
   </form>
 </section>
 
-<!-- سكربت hCaptcha العام (مرة واحدة قرب نهاية الصفحة) -->
-<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
-
-  <!-- نموذج التقرير -->
-  <section id="reportTab" class="card" style="display:none">
-    <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
-    <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
-    <form id="reportForm">
-      <label>الاسم الكامل (اختياري للعرض العلني)</label>
-      <input name="fullName" placeholder="يمكن تركه فارغًا إن رغبت" />
-      <label>تاريخ/وقت الواقعة</label>
-      <input type="datetime-local" name="eventDateTime" required />
-      <label>المكان</label>
-      <input name="place" required placeholder="مسجد/حي/عنوان" />
-      <label>التصنيف</label>
-      <select name="category" required>
-        <option value="">— اختر —</option>
-        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
-      </select>
-      <label>نص التقرير (≥ 120 حرفًا)</label>
-      <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
-      <label>روابط أدلة (اختياري)</label>
-      <input name="evidenceUrl" type="url" placeholder="https://..." />
-      <div class="row">
-        <button type="submit" class="btn">إرسال التقرير</button>
-        <span id="reportStatus" class="muted"></span>
-      </div>
-    </form>
-  </section>
-
   <!-- الشكايات المنشورة -->
   <section id="complaintsListTab" class="card" style="display:none">
     <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
@@ -275,7 +245,7 @@ const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
 
 /* دومين Netlify (عند التصفح من GitHub Pages) */
-const NETLIFY_SITE = "https://delicate-maamoul-683849.netlify.app";
+const NETLIFY_SITE = "https://civic-complaintslive.netlify.app";
 
 /* قاعدة وظائف السيرفر: ديناميكية */
 const FN_BASE = location.hostname.endsWith(".netlify.app")
@@ -566,9 +536,13 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
   const status = document.getElementById("complaintStatus");
   status.textContent = "جارٍ الرفع والتحقق…";
 
-  // تحقق hCaptcha
-  const captchaToken = document.querySelector('#complaintForm [name="h-captcha-response"]')?.value || "";
-  if(!captchaToken){
+  // ✅ التقط توكن hCaptcha من الودجت الحالي (أولوية getResponse ثم الحقل المخفي)
+  const captchaToken =
+    (window.hcaptcha && hcaptcha.getResponse()) ||
+    document.querySelector('#complaintForm [name="h-captcha-response"]')?.value ||
+    "";
+
+  if (!captchaToken) {
     status.textContent = "يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال.";
     return;
   }
@@ -578,27 +552,23 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
   if(file.size > 10*1024*1024){ status.textContent = "حجم الملف أكبر من 10MB."; return; }
 
   let proofPath = "";
-  try{
+  try {
+    // 1) تذكرة رفع (نفس توكن الكابتشا)
+    const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        mime: file.type || "application/pdf",
+        captchaToken
+      })
+    });
+    if(!tkRes.ok){
+      const t = await tkRes.text();
+      throw new Error("فشل تحضير تذكرة الرفع: " + t);
+    }
+    const { path, token } = await tkRes.json();
 
-    // 1) تذكرة رفع
-const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body: JSON.stringify({
-    mime: file.type || "application/pdf",
-    // احصل على التوكن من أول ويدجت (Checkbox)
-    captchaToken: (window.hcaptcha && hcaptcha.getResponse()) || ""
-  })
-});
-if(!tkRes.ok){
-  const t = await tkRes.text();
-  throw new Error("فشل تحضير تذكرة الرفع: " + t);
-}
-// لو وصلنا هنا؛ أعد ضبط الكابتشا للاستخدام القادم
-try{ hcaptcha.reset(); }catch{}
-const { path, token } = await tkRes.json();
-
-    // 2) الرفع المباشر فقط
+    // 2) الرفع المباشر
     const up = await supabase.storage.from(SUPABASE_BUCKET)
       .uploadToSignedUrl(path, token, file, {
         upsert:false,
@@ -607,13 +577,15 @@ const { path, token } = await tkRes.json();
     if(up.error) throw up.error;
 
     proofPath = path;
-  }catch(err){
+  } catch (err) {
     console.error("Direct upload error:", err);
     status.textContent = "تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
     return;
+  } finally {
+    try { window.hcaptcha?.reset(); } catch {}
   }
 
-  // 3) إرسال بيانات الشكوى (نرسل المسار فقط) + توكن الكابتشا
+  // 3) إرسال بيانات الشكوى (المسار فقط) + نفس توكن الكابتشا
   const payload = {
     fullName: fd.get("fullName"),
     showName: fd.get("showName"),
@@ -640,13 +612,12 @@ const { path, token } = await tkRes.json();
     const data = await r.json(); // { number, html_url }
     status.innerHTML = `تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-    if(window.hcaptcha?.reset) window.hcaptcha.reset(); // إعادة ضبط الودجت
 
     // افتح تبويب تتبع الحالة وجهّز الرقم
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn = document.getElementById("trackNumber");
     if(tn){ tn.value = data.number; }
-  }catch(err){
+  } catch {
     status.textContent = "تعذّر إرسال الشكوى. تحقّق من اتصالك.";
   }
 });
@@ -733,7 +704,7 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
 })();
 </script>
 
-<!-- ✅ سكربت hCaptcha العام -->
+<!-- ✅ سكربت hCaptcha العام (مرة واحدة) -->
 <script src="https://js.hcaptcha.com/1/api.js?hl=ar" async defer></script>
 </body>
 </html>
