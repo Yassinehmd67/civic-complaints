@@ -88,41 +88,92 @@
   </section>
 
   <!-- نموذج الشكوى -->
-  <section id="complaintTab" class="card">
-    <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
-    <p class="muted">لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.</p>
-    <form id="complaintForm">
-      <label>الاسم الكامل</label>
-      <input name="fullName" required placeholder="الاسم كما في البطاقة" />
-      <label>إظهار الاسم للعموم؟</label>
-      <select name="showName" required>
-        <option value="yes">نعم، اعرض اسمي</option>
-        <option value="no">لا، أخفِ اسمي</option>
-      </select>
-      <label>تاريخ تقديم الشكوى</label>
-      <input type="date" name="submittedDate" required />
-      <label>نوع الشكوى</label>
-      <select name="category" required>
-        <option value="">— اختر —</option>
-        <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
-      </select>
-      <label>المدينة/المكان (اختياري)</label>
-      <input name="place" placeholder="مثال: فاس - مسجد ..." />
-      <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
-      <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
-      <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
-      <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
-      <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
+<section id="complaintTab" class="card">
+  <div class="section-title"><h2>إيداع شكوى (موقّعة)</h2></div>
+  <p class="muted">
+    لن تُقبل الشكوى بدون رفع وثيقة/صورة موقعة بخط اليد. سيظهر للعموم
+    <b>ملخص الشكوى فقط</b> واسمك حسب رغبتك.
+  </p>
 
-      <!-- ✅ hCaptcha widget -->
-      <div class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
+  <form id="complaintForm">
+    <label>الاسم الكامل</label>
+    <input name="fullName" required placeholder="الاسم كما في البطاقة" />
 
-      <div class="row">
-        <button id="sendComplaintBtn" type="button" class="btn">إرسال الشكوى</button>
-        <span id="complaintStatus" class="muted"></span>
-      </div>
-    </form>
-  </section>
+    <label>إظهار الاسم للعموم؟</label>
+    <select name="showName" required>
+      <option value="yes">نعم، اعرض اسمي</option>
+      <option value="no">لا، أخفِ اسمي</option>
+    </select>
+
+    <label>تاريخ تقديم الشكوى</label>
+    <input type="date" name="submittedDate" required />
+
+    <label>نوع الشكوى</label>
+    <select name="category" required>
+      <option value="">— اختر —</option>
+      <option>شعائر</option>
+      <option>ضوضاء</option>
+      <option>نظافة</option>
+      <option>فساد إداري</option>
+      <option>أخرى</option>
+    </select>
+
+    <label>المدينة/المكان (اختياري)</label>
+    <input name="place" placeholder="مثال: فاس - مسجد ..." />
+
+    <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
+    <textarea
+      name="summary"
+      rows="4"
+      minlength="120"
+      maxlength="400"
+      required
+      placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
+
+    <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
+
+    <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
+    <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
+
+    <!-- ✅ hCaptcha widget (واحد فقط داخل النموذج) -->
+    <div id="complaintCaptcha" class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
+
+    <div class="row">
+      <button id="sendComplaintBtn" type="button" class="btn">إرسال الشكوى</button>
+      <span id="complaintStatus" class="muted"></span>
+    </div>
+  </form>
+</section>
+
+<!-- نموذج التقرير -->
+<section id="reportTab" class="card" style="display:none">
+  <div class="section-title"><h2>إضافة تقرير رصد</h2></div>
+  <p class="muted">التقارير تُعرض كاملة للعموم (مع مراعاة الخصوصية). اذكر الوقائع بدقة وزمنها ومكانها.</p>
+  <form id="reportForm">
+    <label>الاسم الكامل (اختياري للعرض العلني)</label>
+    <input name="fullName" placeholder="يمكن تركه فارغًا إن رغبت" />
+    <label>تاريخ/وقت الواقعة</label>
+    <input type="datetime-local" name="eventDateTime" required />
+    <label>المكان</label>
+    <input name="place" required placeholder="مسجد/حي/عنوان" />
+    <label>التصنيف</label>
+    <select name="category" required>
+      <option value="">— اختر —</option>
+      <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+    </select>
+    <label>نص التقرير (≥ 120 حرفًا)</label>
+    <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
+    <label>روابط أدلة (اختياري)</label>
+    <input name="evidenceUrl" type="url" placeholder="https://..." />
+    <div class="row">
+      <button type="submit" class="btn">إرسال التقرير</button>
+      <span id="reportStatus" class="muted"></span>
+    </div>
+  </form>
+</section>
+
+<!-- سكربت hCaptcha العام (مرة واحدة قرب نهاية الصفحة) -->
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 
   <!-- نموذج التقرير -->
   <section id="reportTab" class="card" style="display:none">
@@ -528,17 +579,24 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
 
   let proofPath = "";
   try{
+
     // 1) تذكرة رفع
-    const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ mime: file.type || "application/pdf" })
-    });
-    if(!tkRes.ok){
-      const t = await tkRes.text();
-      throw new Error("فشل تحضير تذكرة الرفع: " + t);
-    }
-    const { path, token } = await tkRes.json();
+const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body: JSON.stringify({
+    mime: file.type || "application/pdf",
+    // احصل على التوكن من أول ويدجت (Checkbox)
+    captchaToken: (window.hcaptcha && hcaptcha.getResponse()) || ""
+  })
+});
+if(!tkRes.ok){
+  const t = await tkRes.text();
+  throw new Error("فشل تحضير تذكرة الرفع: " + t);
+}
+// لو وصلنا هنا؛ أعد ضبط الكابتشا للاستخدام القادم
+try{ hcaptcha.reset(); }catch{}
+const { path, token } = await tkRes.json();
 
     // 2) الرفع المباشر فقط
     const up = await supabase.storage.from(SUPABASE_BUCKET)
