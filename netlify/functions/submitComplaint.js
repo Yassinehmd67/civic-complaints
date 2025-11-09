@@ -11,7 +11,6 @@ function cors(res) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "POST,OPTIONS",
       "Content-Type": "application/json",
-      ...(res.headers || {}),
     },
   };
 }
@@ -23,8 +22,7 @@ const {
   SUPABASE_URL,
   SUPABASE_SERVICE_ROLE,
   SUPABASE_BUCKET,
-  SUPABASE_PROOFS_TABLE, // اختياري
-  // ⚠️ لم نعد نستخدم HCAPTCHA_SECRET هنا لتجنّب التحقق المزدوج
+  SUPABASE_PROOFS_TABLE, // اختياري (افتراضي أدناه)
 } = process.env;
 
 const PROOFS_TABLE = SUPABASE_PROOFS_TABLE || "complaint_proofs";
@@ -35,11 +33,9 @@ export async function handler(event) {
     return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
   }
 
-  // GitHub مطلوب
   if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing GitHub env vars" }) });
   }
-  // Supabase مطلوب للتخزين الخاص
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE || !SUPABASE_BUCKET) {
     return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing Supabase env vars" }) });
   }
@@ -54,30 +50,17 @@ export async function handler(event) {
       place: (p0.place || "").trim(),
       summary: (p0.summary || "").trim(),
       proofPath: (p0.proofPath || "").trim(),
-      proofUrl: (p0.proofUrl || "").trim(),
-      // captchaToken يمكن أن يأتي من الواجهة لكننا لا نتحقق به هنا
+      // نتجاهل captchaToken هنا عمداً لأن التحقق تمّ مسبقاً في getUploadTicket
+      // captchaToken: (p0.captchaToken || "").trim(),
     };
 
-    // التحقق من المعطيات
+    // تحقق إدخالات
     const errs = [];
     if (!p.fullName || p.fullName.length < 8) errs.push("الاسم الكامل مطلوب.");
     if (!p.submittedDate) errs.push("تاريخ تقديم الشكوى مطلوب.");
     if (!p.category) errs.push("نوع الشكوى مطلوب.");
     if (!p.summary || p.summary.length < 120) errs.push("الملخص قصير جدًا (≥ 120 حرفًا).");
-
-    // قبول proofPath أو استخراج من signed URL (احتياطي)
-    let proofPath = p.proofPath;
-    if (!proofPath && p.proofUrl) {
-      const m =
-        p.proofUrl.match(/\/object\/sign\/([^/]+)\/(.+?)\?(?:.*)$/) ||
-        p.proofUrl.match(/\/sign\/([^/]+)\/(.+?)\?(?:.*)$/);
-      if (m && m[1] && m[2]) {
-        if (!SUPABASE_BUCKET || m[1] === SUPABASE_BUCKET) {
-          proofPath = decodeURIComponent(m[2]);
-        }
-      }
-    }
-    if (!proofPath) errs.push("يجب رفع وثيقة/صورة الشكوى الموقّعة.");
+    if (!p.proofPath) errs.push("يجب رفع وثيقة/صورة الشكوى الموقّعة.");
 
     if (errs.length) {
       return cors({ statusCode: 422, body: JSON.stringify({ error: errs.join(" ") }) });
@@ -113,12 +96,13 @@ export async function handler(event) {
 
     if (!ghRes.ok) {
       const t = await ghRes.text();
+      console.error("[GitHub create issue error]", t);
       return cors({ statusCode: 500, body: JSON.stringify({ error: `GitHub error: ${t}` }) });
     }
 
     const issue = await ghRes.json();
 
-    // 2) تخزين المسار سرًا في Supabase
+    // 2) حفظ مسار المرفق سرًا
     try {
       const sb = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE);
       const ipHeader =
@@ -129,7 +113,7 @@ export async function handler(event) {
 
       const { error: insertErr } = await sb.from(PROOFS_TABLE).insert({
         issue_number: issue.number,
-        proof_path: proofPath,
+        proof_path: p.proofPath,
         uploader_ip: ipHeader || null,
       });
       if (insertErr) console.error("[Supabase insert error]", insertErr);

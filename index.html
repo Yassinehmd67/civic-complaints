@@ -432,7 +432,6 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
     if(up.error) throw up.error;
     proofPath=path;
 
-    try{ if(window.__captchaComplaint!=null) hcaptcha.reset(window.__captchaComplaint); }catch{}
   }catch(err){ console.error("Direct upload error:", err); status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة."; return; }
 
   const payload={
