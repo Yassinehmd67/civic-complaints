@@ -1,3 +1,4 @@
+<!-- index.html (كامل ومحدّث) -->
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -89,36 +90,31 @@
   <form id="complaintForm">
     <label>الاسم الكامل</label>
     <input name="fullName" required placeholder="الاسم كما في البطاقة" />
-
     <label>إظهار الاسم للعموم؟</label>
     <select name="showName" required>
       <option value="yes">نعم، اعرض اسمي</option>
       <option value="no">لا، أخفِ اسمي</option>
     </select>
-
     <label>تاريخ تقديم الشكوى</label>
     <input type="date" name="submittedDate" required />
-
     <label>نوع الشكوى</label>
     <select name="category" required>
       <option value="">— اختر —</option>
-      <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
+      <option>شعائر</option>
+      <option>ضوضاء</option>
+      <option>نظافة</option>
+      <option>فساد إداري</option>
+      <option>أخرى</option>
     </select>
-
     <label>المدينة/المكان (اختياري)</label>
     <input name="place" placeholder="مثال: فاس - مسجد ..." />
-
     <label>ملخص الشكوى (سيُنشر للعموم، 120–400 حرف)</label>
     <textarea name="summary" rows="4" minlength="120" maxlength="400" required placeholder="اكتب خلاصة دقيقة وموضوعية دون بيانات شخصية لأطراف أخرى."></textarea>
-
     <div class="hint">النص التفصيلي الكامل موجود داخل الوثيقة الموقعة التي سترفعها.</div>
-
     <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
     <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
-
-    <!-- ✅ hCaptcha widget (عرض صريح) -->
+    <!-- hCaptcha لِلشكوى -->
     <div id="complaintCaptcha" class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
-
     <div class="row">
       <button id="sendComplaintBtn" type="button" class="btn">إرسال الشكوى</button>
       <span id="complaintStatus" class="muted"></span>
@@ -146,6 +142,8 @@
     <textarea name="body" rows="6" minlength="120" required placeholder="وصف موضوعي للواقعة: ماذا حدث؟ متى؟ أين؟"></textarea>
     <label>روابط أدلة (اختياري)</label>
     <input name="evidenceUrl" type="url" placeholder="https://..." />
+    <!-- ✅ hCaptcha للتقرير -->
+    <div id="reportCaptcha" class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
     <div class="row">
       <button type="submit" class="btn">إرسال التقرير</button>
       <span id="reportStatus" class="muted"></span>
@@ -158,20 +156,14 @@
   <div class="section-title"><h2>الشكايات المنشورة (بعد المراجعة)</h2></div>
   <div id="complaintsList" class="grid" aria-live="polite"></div>
 </section>
-
 <section id="reportsListTab" class="card" style="display:none">
   <div class="section-title"><h2>التقارير المنشورة (بعد المراجعة)</h2></div>
   <div id="reportsList" class="grid" aria-live="polite"></div>
 </section>
 
-<!-- تبويب التبرعات -->
 <section id="donationsTab" class="card" style="display:none">
   <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
-  <p class="muted">
-    هذه المنصة مشروع مدني غير ربحي. التبرعات تُستخدم لتغطية المصاريف التقنية
-    ولدعم التطوير المستمر وإضافة خصائص جديدة. مساهمتك تساعد في إبقاء المنصة شغالة وآمنة.
-  </p>
-
+  <p class="muted">هذه المنصة مشروع مدني غير ربحي…</p>
   <div class="card" style="margin-top:10px">
     <h3 style="margin:0 0 6px">التبرع عبر <b>البريد بنك</b></h3>
     <div class="row" style="align-items: center">
@@ -185,14 +177,11 @@
       <button class="pill" onclick="copyText('#bank-name')">نسخ</button>
     </div>
   </div>
-
   <div class="card" style="margin-top:10px">
     <h3 style="margin:0 0 6px">التبرع عبر <b>USDT (BEP20)</b></h3>
     <div class="row" style="align-items: center">
       <div class="badge">العنوان</div>
-      <code id="usdt-bep20" style="word-break:break-all;user-select:all">
-        0xE55C8cbBEb6c40b7ea18e0D418495267b487978e
-      </code>
+      <code id="usdt-bep20" style="word-break:break-all;user-select:all">0xE55C8cbBEb6c40b7ea18e0D418495267b487978e</code>
       <button class="pill" onclick="copyText('#usdt-bep20')">نسخ</button>
     </div>
     <p class="muted" style="margin-top:8px">تنبيه: استخدم شبكة <b>BEP20</b> عند التحويل.</p>
@@ -200,11 +189,8 @@
 </section>
 
 <div class="sep"></div>
-<footer class="muted">
-  <p>تنبيه: لا تُعرض الوثائق/التوقيعات علنًا. تُحفظ لدى الإدارة فقط كإثبات.</p>
-</footer>
+<footer class="muted"><p>تنبيه: لا تُعرض الوثائق…</p></footer>
 
-<!-- تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
     <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
@@ -215,16 +201,10 @@
 /* === إعدادات المشروع === */
 const REPO_OWNER = "Yassinehmd67";
 const REPO_NAME  = "civic-complaints";
-
-/* دومين Netlify (عند التصفح من GitHub Pages) */
 const NETLIFY_SITE = "https://civic-complaintslive.netlify.app";
+const FN_BASE = location.hostname.endsWith(".netlify.app") ? "/.netlify/functions" : `${NETLIFY_SITE}/.netlify/functions`;
 
-/* قاعدة وظائف السيرفر: ديناميكية */
-const FN_BASE = location.hostname.endsWith(".netlify.app")
-  ? "/.netlify/functions"
-  : `${NETLIFY_SITE}/.netlify/functions`;
-
-/* Supabase (عمومي) */
+/* Supabase */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const SUPABASE_URL  = "https://ymeaeffhygpkzkychdjn.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InltZWFlZmZoeWdwa3preWNoZGpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcwOTY0MzgsImV4cCI6MjA3MjY3MjQzOH0.N1Bfhu3bdAfberMBe1aK2xXVxr0xK42hlTlo7mM4uWE";
@@ -274,7 +254,7 @@ function copyText(selector){
   });
 }
 
-/* بطاقة عنصر */
+/* بطاقات */
 function cardFor(issue, type){
   const labels = issue.labels || [];
   const topic = labelValue(labels,"topic:");
@@ -330,7 +310,7 @@ function cardFor(issue, type){
 function cacheGet(key, maxAgeMs=60000){try{const raw=sessionStorage.getItem(key); if(!raw) return null; const obj=JSON.parse(raw); if(Date.now()-obj.t>maxAgeMs) return null; return obj.v;}catch{return null}}
 function cacheSet(key,val){try{sessionStorage.setItem(key,JSON.stringify({t:Date.now(),v:val}))}catch{}}
 
-/* جلب approved */
+/* جلب الموافق عليها */
 async function fetchApprovedSmart(filters = {}) {
   const onNetlify = location.hostname.endsWith(".netlify.app");
   const cacheKey = "approved:" + JSON.stringify(filters) + ":" + (onNetlify?"netlify":"ghpages");
@@ -384,10 +364,7 @@ async function renderComplaints(){
     const items=await fetchApprovedSmart({type:"complaint"});
     list.innerHTML=items.map(it=>cardFor(it,"complaint")).join("")||"<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
     bindCommentForms(list);
-  }catch(e){
-    list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";
-    console.error(e);
-  }
+  }catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);}
 }
 async function renderReports(){
   const list=document.getElementById("reportsList");
@@ -396,10 +373,7 @@ async function renderReports(){
     const items=await fetchApprovedSmart({type:"report"});
     list.innerHTML=items.map(it=>cardFor(it,"report")).join("")||"<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
     bindCommentForms(list);
-  }catch(e){
-    list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";
-    console.error(e);
-  }
+  }catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);}
 }
 
 /* نماذج التعليقات */
@@ -413,54 +387,32 @@ function bindCommentForms(scope=document){
       try{
         const r=await fetch(`${FN_BASE}/submitComment`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
         status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
-        if(r.ok){
-          form.reset();
-          const c=document.getElementById(`c-${payload.issueNumber}`);
-          if(c) c.textContent=String(Number(c.textContent||"0")+1);
-        }
-      }catch{
-        status.textContent="تعذّر الإرسال.";
-      }
+        if(r.ok){ form.reset(); const c=document.getElementById(`c-${payload.issueNumber}`); if(c) c.textContent=String(Number(c.textContent||"0")+1); }
+      }catch{ status.textContent="تعذّر الإرسال."; }
     });
   });
 }
 
-/* زر الإعجاب */
+/* إعجاب */
 async function upvote(issueNumber){
-  const votedKey=`voted-${issueNumber}`;
-  if(localStorage.getItem(votedKey)==="1"){alert("تم احتساب صوتك."); return;}
+  const votedKey=`voted-${issueNumber}`; if(localStorage.getItem(votedKey)==="1"){alert("تم احتساب صوتك."); return;}
   const btn=document.querySelector(`#card-${issueNumber} button`); btn.disabled=true;
   try{
     const r=await fetch(`${FN_BASE}/upvoteIssue`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({issueNumber})});
-    if(r.ok){
-      const l=document.getElementById(`l-${issueNumber}`);
-      if(l) l.textContent=String(Number(l.textContent||"0")+1);
-      localStorage.setItem(votedKey,"1");
-      btn.textContent="تم احتساب صوتك";
-      alert("تم ضمّ صوتك. شكرًا!");
-    }else{
-      alert("تعذّر تسجيل الإعجاب الآن.");
-      btn.disabled=false;
-    }
-  }catch{
-    alert("تعذّر تسجيل الإعجاب.");
-    btn.disabled=false;
-  }
+    if(r.ok){ const l=document.getElementById(`l-${issueNumber}`); if(l) l.textContent=String(Number(l.textContent||"0")+1); localStorage.setItem(votedKey,"1"); btn.textContent="تم احتساب صوتك"; alert("تم ضمّ صوتك. شكرًا!"); }
+    else { alert("تعذّر تسجيل الإعجاب الآن."); btn.disabled=false; }
+  }catch{ alert("تعذّر تسجيل الإعجاب."); btn.disabled=false; }
 }
 
-/* --- إرسال الشكوى: رفع مباشر + hCaptcha + إرسال proofPath فقط --- */
+/* إرسال الشكوى */
 document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>{
   const form=document.getElementById("complaintForm");
   const fd=new FormData(form);
   const status=document.getElementById("complaintStatus");
   status.textContent="جارٍ الرفع والتحقق…";
 
-  // hCaptcha token من الودجت المرسوم (مع معالجة already-seen)
-  let captchaToken = (window.__captchaId!=null) ? hcaptcha.getResponse(window.__captchaId) : "";
-  if(!captchaToken){
-    status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال.";
-    return;
-  }
+  const captchaToken = (window.__captchaComplaint!=null) ? hcaptcha.getResponse(window.__captchaComplaint) : "";
+  if(!captchaToken){ status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال."; return; }
 
   const file=fd.get("proofFile");
   if(!file || file.size===0){ status.textContent="الملف الموقّع مطلوب."; return; }
@@ -468,54 +420,21 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
 
   let proofPath="";
   try{
-    // 1) تذكرة رفع
     const tkRes=await fetch(`${FN_BASE}/getUploadTicket`,{
       method:"POST", headers:{"Content-Type":"application/json"},
       body:JSON.stringify({ mime:file.type||"application/pdf", captchaToken })
     });
-    if(!tkRes.ok){
-      const txt=await tkRes.text();
-      // إعادة ضبط الكابتشا إذا كانت المشكلة from hCaptcha
-      try{
-        const j=JSON.parse(txt);
-        if(j?.diagnostics?.["error-codes"]?.includes("already-seen-response")){
-          hcaptcha.reset(window.__captchaId);
-          status.textContent="انتهت صلاحية التوكين الأمني. من فضلك أعد حلّ الكابتشا ثم أعد الإرسال.";
-          return;
-        }
-      }catch{}
-      throw new Error("فشل تحضير تذكرة الرفع: "+txt);
-    }
+    if(!tkRes.ok){ const t=await tkRes.text(); throw new Error("فشل تحضير تذكرة الرفع: "+t); }
     const { path, token } = await tkRes.json();
 
-    // 2) الرفع المباشر — توافق Android: نمرر File مباشرة، وإن تعذّر نحاول arrayBuffer
-    let up = await supabase.storage.from(SUPABASE_BUCKET)
-      .uploadToSignedUrl(path, token, file, {
-        upsert:false,
-        contentType:file.type||"application/octet-stream"
-      });
-
-    if(up.error){
-      // محاولة ثانية لأجهزة قديمة: تحويل لــ Blob جديد من ArrayBuffer
-      try{
-        const ab = await file.arrayBuffer();
-        const blob = new Blob([ab], { type: file.type||"application/octet-stream" });
-        up = await supabase.storage.from(SUPABASE_BUCKET)
-          .uploadToSignedUrl(path, token, blob, { upsert:false, contentType: blob.type });
-      }catch(e){}
-    }
+    const up=await supabase.storage.from(SUPABASE_BUCKET)
+      .uploadToSignedUrl(path, token, file, { upsert:false, contentType:file.type||"application/octet-stream" });
     if(up.error) throw up.error;
-
     proofPath=path;
 
-    try{ if(window.__captchaId!=null) hcaptcha.reset(window.__captchaId); }catch{}
-  }catch(err){
-    console.error("Direct upload error:", err);
-    status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
-    return;
-  }
+    try{ if(window.__captchaComplaint!=null) hcaptcha.reset(window.__captchaComplaint); }catch{}
+  }catch(err){ console.error("Direct upload error:", err); status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة."; return; }
 
-  // 3) إرسال بيانات الشكوى (نرسل المسار فقط)
   const payload={
     fullName:fd.get("fullName"),
     showName:fd.get("showName"),
@@ -528,46 +447,46 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
   };
 
   try{
-    const r=await fetch(`${FN_BASE}/submitComplaint`,{
-      method:"POST", headers:{"Content-Type":"application/json"},
-      body:JSON.stringify(payload)
-    });
-
-    if(!r.ok){
-      const t=await r.text();
-      status.textContent="تعذّر إرسال الشكوى: "+t;
-      return;
-    }
-
-    const data=await r.json(); // { number, html_url }
+    const r=await fetch(`${FN_BASE}/submitComplaint`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    if(!r.ok){ const t=await r.text(); status.textContent="تعذّر إرسال الشكوى: "+t; return; }
+    const data=await r.json();
     status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-
-    // افتح تبويب تتبع الحالة وجهّز الرقم
+    if(window.__captchaComplaint!=null) try{hcaptcha.reset(window.__captchaComplaint);}catch{}
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
-  }catch(err){
-    status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك.";
-  }
+  }catch{ status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك."; }
 });
 
-/* إرسال التقرير */
+/* إرسال التقرير (أُضيف الكابتشا) */
 document.getElementById("reportForm").addEventListener("submit", async (e)=>{
   e.preventDefault();
   const form=e.target; const fd=new FormData(form);
   const status=document.getElementById("reportStatus"); status.textContent="جارٍ الإرسال…";
-  const payload={ fullName:fd.get("fullName"), eventDateTime:fd.get("eventDateTime"), place:fd.get("place"), category:fd.get("category"), body:fd.get("body"), evidenceUrl:fd.get("evidenceUrl") };
+
+  const captchaToken = (window.__captchaReport!=null) ? hcaptcha.getResponse(window.__captchaReport) : "";
+  if(!captchaToken){ status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال."; return; }
+
+  const payload={
+    fullName:fd.get("fullName"),
+    eventDateTime:fd.get("eventDateTime"),
+    place:fd.get("place"),
+    category:fd.get("category"),
+    body:fd.get("body"),
+    evidenceUrl:fd.get("evidenceUrl"),
+    captchaToken
+  };
+
   try{
     const r=await fetch(`${FN_BASE}/submitReport`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(!r.ok){ status.textContent="تعذّر إرسال التقرير."; return; }
+    if(!r.ok){ const t=await r.text(); status.textContent="تعذّر إرسال التقرير: "+t; return; }
     const data=await r.json();
     status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
+    if(window.__captchaReport!=null) try{hcaptcha.reset(window.__captchaReport);}catch{}
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
-  }catch{
-    status.textContent="تعذّر إرسال التقرير. تحقّق من اتصالك.";
-  }
+  }catch{ status.textContent="تعذّر إرسال التقرير. تحقّق من اتصالك."; }
 });
 
 /* تتبع الحالة */
@@ -593,9 +512,7 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
         <p>${escapeHtml(d.display)}</p>
         <div class="row"><a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a></div>
       </div>`;
-  }catch{
-    box.innerHTML="<p class='muted'>حصل خطأ أثناء الاستعلام.</p>";
-  }
+  }catch{ box.innerHTML="<p class='muted'>حصل خطأ أثناء الاستعلام.</p>"; }
 });
 
 /* ref= */
@@ -609,19 +526,26 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
 })();
 </script>
 
-<!-- تحميل hCaptcha (تصيير صريح + onload) -->
+<!-- تحميل hCaptcha (تصييرين منفصلين) -->
 <script>
-  window.__captchaId = null;
+  window.__captchaComplaint = null;
+  window.__captchaReport = null;
   function onHCaptchaLoad(){
-    if (!window.__captchaId) {
-      try {
-        window.__captchaId = hcaptcha.render('complaintCaptcha', {
+    try {
+      if (!window.__captchaComplaint) {
+        window.__captchaComplaint = hcaptcha.render('complaintCaptcha', {
           sitekey: '8f262b7a-face-428c-a24c-91c438fa76d4',
           theme: 'light'
         });
-      } catch (e) {
-        console.error("hCaptcha render error:", e);
       }
+      if (!window.__captchaReport) {
+        window.__captchaReport = hcaptcha.render('reportCaptcha', {
+          sitekey: '8f262b7a-face-428c-a24c-91c438fa76d4',
+          theme: 'light'
+        });
+      }
+    } catch (e) {
+      console.error("hCaptcha render error:", e);
     }
   }
 </script>

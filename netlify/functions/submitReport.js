@@ -1,6 +1,8 @@
 // netlify/functions/submitReport.js
+// إنشاء Issue لتقرير رصد + تحقق hCaptcha
 export const config = { path: "/.netlify/functions/submitReport" };
 
+/* ---------- CORS ---------- */
 function cors(res) {
   return {
     ...res,
@@ -9,167 +11,184 @@ function cors(res) {
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
       "Access-Control-Allow-Methods": "POST,OPTIONS",
       "Content-Type": "application/json",
+      ...(res.headers || {}),
     },
   };
 }
 
+/* ---------- Utils ---------- */
+function ipFromHeaders(h = {}) {
+  const raw =
+    h["x-forwarded-for"] ||
+    h["X-Forwarded-For"] ||
+    h["x-nf-client-connection-ip"] ||
+    h["client-ip"] ||
+    h["Client-IP"] ||
+    "";
+  return String(raw).split(",")[0].trim() || undefined;
+}
+
+/* ---------- Env ---------- */
 const {
   REPO_OWNER,
   REPO_NAME,
   GITHUB_TOKEN,
-  HCAPTCHA_SECRET,   // مفتاح hCaptcha السري (خادم)
-  ORIGIN_WHITELIST, // اختياري: example.com,foo.netlify.app
+  HCAPTCHA_SECRET, // مفعل في Netlify env
 } = process.env;
 
-/* ========= تبطيء بسيط لكل IP ========= */
-const RL_WINDOW_MS = 10 * 60 * 1000; // 10 دقائق
-const RL_LIMIT = 30;                  // حد تقارير أعلى قليلًا
-const rlMap = new Map();              // ip -> [timestamps]
-
-function rateHit(ip) {
-  const now = Date.now();
-  const arr = (rlMap.get(ip) || []).filter((t) => now - t < RL_WINDOW_MS);
-  arr.push(now);
-  rlMap.set(ip, arr);
-  return arr.length;
-}
-
-/* ========= تحقّق hCaptcha ========= */
-async function verifyHCaptcha(token) {
-  if (!HCAPTCHA_SECRET) return false;
-  if (!token || typeof token !== "string" || token.length < 10) return false;
-
-  const res = await fetch("https://hcaptcha.com/siteverify", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      secret: HCAPTCHA_SECRET,
-      response: token,
-    }),
-  });
-  if (!res.ok) return false;
-  const data = await res.json().catch(() => ({}));
-  return !!data.success;
-}
-
-/* ========= تحقّق Origin (اختياري) ========= */
-function isOriginAllowed(headers) {
-  if (!ORIGIN_WHITELIST) return true;
-  const allow = ORIGIN_WHITELIST.split(",").map((s) => s.trim()).filter(Boolean);
-  const origin = headers.origin || headers.Origin || "";
-  if (!origin) return true;
-  try {
-    const u = new URL(origin);
-    const host = u.host.toLowerCase();
-    return allow.some((h) => host === h.toLowerCase());
-  } catch {
-    return false;
-  }
-}
-
+/* ---------- Handler ---------- */
 export async function handler(event) {
-  if (event.httpMethod === "OPTIONS") return cors({ statusCode: 200, body: "" });
-  if (event.httpMethod !== "POST")    return cors({ statusCode: 405, body: JSON.stringify({ error: "Method Not Allowed" }) });
-
-  if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
-    return cors({ statusCode: 500, body: JSON.stringify({ error: "Missing server env" }) });
+  if (event.httpMethod === "OPTIONS") {
+    return cors({ statusCode: 200, body: "" });
   }
-
-  // فحص Origin
-  if (!isOriginAllowed(event.headers || {})) {
-    return cors({ statusCode: 403, body: JSON.stringify({ error: "Origin not allowed" }) });
-  }
-
-  // تبطيء حسب IP
-  const ipHeader =
-    event.headers["x-nf-client-connection-ip"] ||
-    event.headers["client-ip"] ||
-    (event.headers["x-forwarded-for"] || "").split(",")[0] ||
-    null;
-
-  if (rateHit(ipHeader || "unknown") > RL_LIMIT) {
+  if (event.httpMethod !== "POST") {
     return cors({
-      statusCode: 429,
-      body: JSON.stringify({ error: "طلبات كثيرة من نفس العنوان. حاول لاحقًا." }),
+      statusCode: 405,
+      body: JSON.stringify({ error: "Method Not Allowed" }),
     });
   }
 
-  try {
-    const p0 = JSON.parse(event.body || "{}");
-
-    // تنظيف الحقول
-    const p = {
-      fullName: (p0.fullName || "").trim(),
-      eventDateTime: (p0.eventDateTime || "").trim(),
-      place: (p0.place || "").trim(),
-      category: (p0.category || "").trim(),
-      body: (p0.body || "").trim(),
-      evidenceUrl: (p0.evidenceUrl || "").trim(),
-      hcaptchaToken: (p0.hcaptchaToken || "").trim(),
-    };
-
-    // hCaptcha إلزامي
-    const okCaptcha = await verifyHCaptcha(p.hcaptchaToken);
-    if (!okCaptcha) {
-      return cors({ statusCode: 400, body: JSON.stringify({ error: "فشل التحقق من hCaptcha" }) });
-    }
-
-    // التحقق من المدخلات
-    const errs = [];
-    if (!p.eventDateTime) errs.push("تاريخ/وقت الواقعة مطلوب.");
-    if (!p.place)         errs.push("المكان مطلوب.");
-    if (!p.category)      errs.push("التصنيف مطلوب.");
-    if (!p.body || p.body.length < 120) errs.push("نص التقرير قصير (≥ 120 حرفًا).");
-    if (errs.length) return cors({ statusCode: 422, body: JSON.stringify({ error: errs.join(" ") }) });
-
-    // دعم عدة روابط أدلة مفصولة بفواصل
-    let evidenceBlock = "";
-    if (p.evidenceUrl) {
-      const links = p.evidenceUrl.split(",").map(s => s.trim()).filter(Boolean);
-      if (links.length === 1) {
-        evidenceBlock = `**روابط أدلة:** ${links[0]}`;
-      } else if (links.length > 1) {
-        evidenceBlock = `**روابط أدلة:**\n${links.map(u => `- ${u}`).join("\n")}`;
-      }
-    }
-
-    const title = `تقرير: [${p.category}] — ${p.place} — ${p.eventDateTime}`;
-    const md = [
-      `**النوع:** تقرير`,
-      p.fullName ? `**مبلِّغ:** ${p.fullName}` : "",
-      `**تاريخ/وقت الواقعة:** ${p.eventDateTime}`,
-      `**المكان:** ${p.place}`,
-      "",
-      p.body,
-      "",
-      evidenceBlock,
-    ].filter(Boolean).join("\n");
-
-    const labels = ["pending", "type: report", `topic: ${p.category}`];
-    if (p.place) labels.push(`city: ${p.place}`);
-
-    const res = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${GITHUB_TOKEN}`,
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title, body: md, labels }),
+  // GitHub + hCaptcha
+  if (!REPO_OWNER || !REPO_NAME || !GITHUB_TOKEN) {
+    return cors({
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Missing GitHub env vars",
+        missing: {
+          REPO_OWNER: !!REPO_OWNER,
+          REPO_NAME: !!REPO_NAME,
+          GITHUB_TOKEN: !!GITHUB_TOKEN,
+        },
+      }),
     });
+  }
+  if (!HCAPTCHA_SECRET) {
+    return cors({
+      statusCode: 500,
+      body: JSON.stringify({ error: "Missing hCaptcha secret (HCAPTCHA_SECRET)" }),
+    });
+  }
 
-    if (!res.ok) {
-      const t = await res.text();
-      return cors({ statusCode: 500, body: JSON.stringify({ error: `GitHub error: ${t}` }) });
+  // Parse body
+  let p0;
+  try {
+    p0 = JSON.parse(event.body || "{}");
+  } catch {
+    return cors({ statusCode: 400, body: JSON.stringify({ error: "Invalid JSON body" }) });
+  }
+
+  const p = {
+    fullName: (p0.fullName || "").trim(),
+    eventDateTime: (p0.eventDateTime || "").trim(),
+    place: (p0.place || "").trim(),
+    category: (p0.category || "").trim(),
+    body: (p0.body || "").trim(),
+    evidenceUrl: (p0.evidenceUrl || "").trim(),
+    captchaToken: (p0.captchaToken || "").trim(),
+  };
+
+  // hCaptcha verify (required)
+  if (!p.captchaToken) {
+    return cors({ statusCode: 400, body: JSON.stringify({ error: "captchaToken is required" }) });
+  }
+  try {
+    const remoteIp = ipFromHeaders(event.headers || {});
+    const hv = await fetch("https://hcaptcha.com/siteverify", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        secret: HCAPTCHA_SECRET,
+        response: p.captchaToken,
+        ...(remoteIp ? { remoteip: remoteIp } : {}),
+      }),
+    });
+    const v = await hv.json().catch(() => ({}));
+    if (!v.success) {
+      return cors({
+        statusCode: 400,
+        body: JSON.stringify({
+          error: "فشل التحقق من hCaptcha",
+          diagnostics: {
+            "error-codes": v["error-codes"] || null,
+            hostname: v.hostname || null,
+            challenge_ts: v.challenge_ts || null,
+            credit: v.credit || null,
+          },
+        }),
+      });
+    }
+  } catch (e) {
+    return cors({
+      statusCode: 502,
+      body: JSON.stringify({
+        error: "hCaptcha verify request failed",
+        detail: e.message || String(e),
+      }),
+    });
+  }
+
+  // Validate fields
+  const errs = [];
+  if (!p.eventDateTime) errs.push("تاريخ/وقت الواقعة مطلوب.");
+  if (!p.place) errs.push("مكان الواقعة مطلوب.");
+  if (!p.category) errs.push("التصنيف مطلوب.");
+  if (!p.body || p.body.length < 120) errs.push("نص التقرير قصير جدًا (≥ 120 حرفًا).");
+  if (errs.length) {
+    return cors({ statusCode: 422, body: JSON.stringify({ error: errs.join(" ") }) });
+  }
+
+  // Compose issue
+  const title = `تقرير: [${p.category}] ${p.place} — ${p.eventDateTime}`;
+  const issueBody = [
+    `**النوع:** تقرير`,
+    p.fullName ? `**الاسم (اختياري للعرض العلني):** ${p.fullName}` : "",
+    `**الوقت:** ${p.eventDateTime}`,
+    `**المكان:** ${p.place}`,
+    p.evidenceUrl ? `**روابط أدلة:** ${p.evidenceUrl}` : "",
+    "",
+    p.body,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const labels = ["pending", "type: report", `topic: ${p.category}`];
+  if (p.place) labels.push(`city: ${p.place}`);
+
+  // Create GitHub issue
+  try {
+    const ghRes = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          Accept: "application/vnd.github+json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title, body: issueBody, labels }),
+      }
+    );
+
+    if (!ghRes.ok) {
+      const t = await ghRes.text();
+      return cors({
+        statusCode: 500,
+        body: JSON.stringify({ error: "GitHub error", detail: t }),
+      });
     }
 
-    const issue = await res.json();
+    const issue = await ghRes.json();
     return cors({
       statusCode: 200,
       body: JSON.stringify({ number: issue.number, html_url: issue.html_url }),
     });
-
   } catch (e) {
-    return cors({ statusCode: 500, body: JSON.stringify({ error: String(e.message || e) }) });
+    return cors({
+      statusCode: 500,
+      body: JSON.stringify({
+        error: "Submit report failed",
+        detail: e.message || String(e),
+      }),
+    });
   }
 }
