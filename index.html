@@ -1,4 +1,3 @@
-<!-- index.html (مُحدّث بالكامل) -->
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -103,11 +102,7 @@
     <label>نوع الشكوى</label>
     <select name="category" required>
       <option value="">— اختر —</option>
-      <option>شعائر</option>
-      <option>ضوضاء</option>
-      <option>نظافة</option>
-      <option>فساد إداري</option>
-      <option>أخرى</option>
+      <option>شعائر</option><option>ضوضاء</option><option>نظافة</option><option>فساد إداري</option><option>أخرى</option>
     </select>
 
     <label>المدينة/المكان (اختياري)</label>
@@ -121,7 +116,7 @@
     <label>وثيقة/صورة الشكوى الموقعة (PDF/PNG/JPG ≤ 10MB) — إلزامي</label>
     <input type="file" name="proofFile" accept=".pdf,image/png,image/jpeg" required />
 
-    <!-- hCaptcha: عنصر الحاوية فقط (تصيير صريح عبر onload) -->
+    <!-- ✅ hCaptcha widget (عرض صريح) -->
     <div id="complaintCaptcha" class="h-captcha" data-sitekey="8f262b7a-face-428c-a24c-91c438fa76d4"></div>
 
     <div class="row">
@@ -169,6 +164,7 @@
   <div id="reportsList" class="grid" aria-live="polite"></div>
 </section>
 
+<!-- تبويب التبرعات -->
 <section id="donationsTab" class="card" style="display:none">
   <div class="section-title"><h2>التبرعات ودعم المنصة</h2></div>
   <p class="muted">
@@ -211,7 +207,7 @@
 <!-- تيلجرام -->
 <a href="https://t.me/chikayalive" target="_blank" class="telegram-fab" title="تابعنا على تيلجرام" aria-label="قناة تيلجرام">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="28" height="28" fill="#fff" aria-hidden="true" focusable="false">
-    <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7ل142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
+    <path d="M120 0C53.7 0 0 53.7 0 120s53.7 120 120 120 120-53.7 120-120S186.3 0 120 0zm58.3 81.9l-24.3 114.8c-1.8 8.3-6.7 10.4-13.5 6.5l-37.4-27.6-18 17.3c-2 2-3.6 3.6-7.3 3.6l2.6-37.7 68.6-61.9c3-2.6-.6-4.1-4.6-1.5l-84.8 53.5-36.5-11.4c-7.9-2.5-8.1-7.9 1.7-11.7l142.5-55.1c6.6-2.4 12.4 1.6 10.3 11.3z"/>
   </svg>
 </a>
 
@@ -251,7 +247,7 @@ document.getElementById("toReports").onclick   = ()=>document.querySelector('.ta
 const toDon = document.getElementById("toDonations");
 if(toDon){ toDon.onclick = ()=>document.querySelector('.tab-btn[data-tab="donationsTab"]').click(); }
 
-/* أدوات */
+/* أدوات مساعدة */
 function labelValue(labels, prefix){
   const l = (labels || []).find(x => ((x.name||x)+"").startsWith(prefix));
   if (!l) return "";
@@ -380,11 +376,31 @@ async function fetchApprovedSmart(filters = {}) {
   return items;
 }
 
-/* عرض */
-async function renderComplaints(){ const list=document.getElementById("complaintsList"); list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
-  try{ const items=await fetchApprovedSmart({type:"complaint"}); list.innerHTML=items.map(it=>cardFor(it,"complaint")).join("")||"<p class='muted'>لا توجد شكايات منشورة بعد.</p>"; bindCommentForms(list);}catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);} }
-async function renderReports(){ const list=document.getElementById("reportsList"); list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
-  try{ const items=await fetchApprovedSmart({type:"report"}); list.innerHTML=items.map(it=>cardFor(it,"report")).join("")||"<p class='muted'>لا توجد تقارير منشورة بعد.</p>"; bindCommentForms(list);}catch(e){list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";console.error(e);} }
+/* عرض القوائم */
+async function renderComplaints(){
+  const list=document.getElementById("complaintsList");
+  list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
+  try{
+    const items=await fetchApprovedSmart({type:"complaint"});
+    list.innerHTML=items.map(it=>cardFor(it,"complaint")).join("")||"<p class='muted'>لا توجد شكايات منشورة بعد.</p>";
+    bindCommentForms(list);
+  }catch(e){
+    list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";
+    console.error(e);
+  }
+}
+async function renderReports(){
+  const list=document.getElementById("reportsList");
+  list.innerHTML="<p class='muted'>… جارٍ التحميل</p>";
+  try{
+    const items=await fetchApprovedSmart({type:"report"});
+    list.innerHTML=items.map(it=>cardFor(it,"report")).join("")||"<p class='muted'>لا توجد تقارير منشورة بعد.</p>";
+    bindCommentForms(list);
+  }catch(e){
+    list.innerHTML="<p class='muted'>تعذّر التحميل.</p>";
+    console.error(e);
+  }
+}
 
 /* نماذج التعليقات */
 function bindCommentForms(scope=document){
@@ -397,114 +413,109 @@ function bindCommentForms(scope=document){
       try{
         const r=await fetch(`${FN_BASE}/submitComment`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
         status.textContent = r.ok ? "تم إرسال التعليق للمراجعة." : "تعذّر الإرسال.";
-        if(r.ok){ form.reset(); const c=document.getElementById(`c-${payload.issueNumber}`); if(c) c.textContent=String(Number(c.textContent||"0")+1); }
-      }catch{ status.textContent="تعذّر الإرسال."; }
+        if(r.ok){
+          form.reset();
+          const c=document.getElementById(`c-${payload.issueNumber}`);
+          if(c) c.textContent=String(Number(c.textContent||"0")+1);
+        }
+      }catch{
+        status.textContent="تعذّر الإرسال.";
+      }
     });
   });
 }
 
-/* إعجاب */
+/* زر الإعجاب */
 async function upvote(issueNumber){
-  const votedKey=`voted-${issueNumber}`; if(localStorage.getItem(votedKey)==="1"){alert("تم احتساب صوتك."); return;}
+  const votedKey=`voted-${issueNumber}`;
+  if(localStorage.getItem(votedKey)==="1"){alert("تم احتساب صوتك."); return;}
   const btn=document.querySelector(`#card-${issueNumber} button`); btn.disabled=true;
   try{
     const r=await fetch(`${FN_BASE}/upvoteIssue`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({issueNumber})});
-    if(r.ok){ const l=document.getElementById(`l-${issueNumber}`); if(l) l.textContent=String(Number(l.textContent||"0")+1); localStorage.setItem(votedKey,"1"); btn.textContent="تم احتساب صوتك"; alert("تم ضمّ صوتك. شكرًا!"); }
-    else { alert("تعذّر تسجيل الإعجاب الآن."); btn.disabled=false; }
-  }catch{ alert("تعذّر تسجيل الإعجاب."); btn.disabled=false; }
+    if(r.ok){
+      const l=document.getElementById(`l-${issueNumber}`);
+      if(l) l.textContent=String(Number(l.textContent||"0")+1);
+      localStorage.setItem(votedKey,"1");
+      btn.textContent="تم احتساب صوتك";
+      alert("تم ضمّ صوتك. شكرًا!");
+    }else{
+      alert("تعذّر تسجيل الإعجاب الآن.");
+      btn.disabled=false;
+    }
+  }catch{
+    alert("تعذّر تسجيل الإعجاب.");
+    btn.disabled=false;
+  }
 }
 
-/* إرسال الشكوى (رفع مباشر + إعادة تلقائية لرمز الرفع عند انتهاء الصلاحية) */
+/* --- إرسال الشكوى: رفع مباشر + hCaptcha + إرسال proofPath فقط --- */
 document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>{
   const form=document.getElementById("complaintForm");
   const fd=new FormData(form);
   const status=document.getElementById("complaintStatus");
   status.textContent="جارٍ الرفع والتحقق…";
 
-  // hCaptcha token من الودجت المرسوم
-  const captchaToken = (window.__captchaId!=null) ? hcaptcha.getResponse(window.__captchaId) : "";
-  if(!captchaToken){ status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال."; return; }
+  // hCaptcha token من الودجت المرسوم (مع معالجة already-seen)
+  let captchaToken = (window.__captchaId!=null) ? hcaptcha.getResponse(window.__captchaId) : "";
+  if(!captchaToken){
+    status.textContent="يرجى إكمال اختبار الحماية (hCaptcha) قبل الإرسال.";
+    return;
+  }
 
   const file=fd.get("proofFile");
   if(!file || file.size===0){ status.textContent="الملف الموقّع مطلوب."; return; }
   if(file.size>10*1024*1024){ status.textContent="حجم الملف أكبر من 10MB."; return; }
 
-  let proofPath = "";
-  try {
-    // 1) اطلب تذكرة الرفع
-    const tkRes = await fetch(`${FN_BASE}/getUploadTicket`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({ mime: file.type || "application/pdf", captchaToken })
+  let proofPath="";
+  try{
+    // 1) تذكرة رفع
+    const tkRes=await fetch(`${FN_BASE}/getUploadTicket`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ mime:file.type||"application/pdf", captchaToken })
     });
-    if (!tkRes.ok) {
-      const t = await tkRes.text();
-      throw new Error("فشل تحضير تذكرة الرفع: " + t);
+    if(!tkRes.ok){
+      const txt=await tkRes.text();
+      // إعادة ضبط الكابتشا إذا كانت المشكلة from hCaptcha
+      try{
+        const j=JSON.parse(txt);
+        if(j?.diagnostics?.["error-codes"]?.includes("already-seen-response")){
+          hcaptcha.reset(window.__captchaId);
+          status.textContent="انتهت صلاحية التوكين الأمني. من فضلك أعد حلّ الكابتشا ثم أعد الإرسال.";
+          return;
+        }
+      }catch{}
+      throw new Error("فشل تحضير تذكرة الرفع: "+txt);
     }
     const { path, token } = await tkRes.json();
 
-    // دالة رفع مع تشخيص كامل
-    async function doUpload(pth, tkn) {
-      const result = await supabase.storage
-        .from(SUPABASE_BUCKET)
-        .uploadToSignedUrl(pth, tkn, file, {
-          upsert:false,
-          contentType:file.type || "application/octet-stream"
-        });
-      if (result?.error) {
-        console.error("[Supabase upload error]", {
-          message: result.error.message,
-          name: result.error.name,
-          status: result.error.status,
-          cause: result.error.cause,
-          response: result.error.response
-        });
-        throw result.error;
-      }
-      return result;
-    }
+    // 2) الرفع المباشر — توافق Android: نمرر File مباشرة، وإن تعذّر نحاول arrayBuffer
+    let up = await supabase.storage.from(SUPABASE_BUCKET)
+      .uploadToSignedUrl(path, token, file, {
+        upsert:false,
+        contentType:file.type||"application/octet-stream"
+      });
 
-    // 2) الرفع + إعادة تلقائية لمرة واحدة إن انتهت التذكرة
-    try {
-      await doUpload(path, token);
-      proofPath = path;
-    } catch (e) {
-      const msg = (e?.message || "").toLowerCase();
-      const expired = msg.includes("expired") || msg.includes("signature") || msg.includes("token");
-      if (expired) {
-        console.warn("[Upload] token expired → requesting new ticket and retrying once…");
-        const tk2 = await fetch(`${FN_BASE}/getUploadTicket`, {
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ mime: file.type || "application/pdf", captchaToken })
-        });
-        if (tk2.ok) {
-          const { path: path2, token: token2 } = await tk2.json();
-          await doUpload(path2, token2);
-          proofPath = path2;
-        } else {
-          const t = await tk2.text();
-          throw new Error("إعادة طلب تذكرة فشلت: " + t);
-        }
-      } else {
-        throw e;
-      }
+    if(up.error){
+      // محاولة ثانية لأجهزة قديمة: تحويل لــ Blob جديد من ArrayBuffer
+      try{
+        const ab = await file.arrayBuffer();
+        const blob = new Blob([ab], { type: file.type||"application/octet-stream" });
+        up = await supabase.storage.from(SUPABASE_BUCKET)
+          .uploadToSignedUrl(path, token, blob, { upsert:false, contentType: blob.type });
+      }catch(e){}
     }
+    if(up.error) throw up.error;
 
-    try { if (window.__captchaId != null) hcaptcha.reset(window.__captchaId); } catch {}
-  } catch (err) {
+    proofPath=path;
+
+    try{ if(window.__captchaId!=null) hcaptcha.reset(window.__captchaId); }catch{}
+  }catch(err){
     console.error("Direct upload error:", err);
-    let hint = "";
-    if (String(err?.message || "").includes("NetworkError")) {
-      hint = " (تحقق من الشبكة أو إذن البيانات للهاتف)";
-    } else if ((err?.status|0) === 413) {
-      hint = " (الملف كبير جدًا)";
-    }
-    status.textContent = "تعذّر رفع الملف. " + (err?.message || "خطأ غير معروف") + hint;
+    status.textContent="تعذّر رفع الملف. تحقّق من اتصالك ثم أعد المحاولة.";
     return;
   }
 
-  // 3) إرسال بيانات الشكوى
+  // 3) إرسال بيانات الشكوى (نرسل المسار فقط)
   const payload={
     fullName:fd.get("fullName"),
     showName:fd.get("showName"),
@@ -517,15 +528,27 @@ document.getElementById("sendComplaintBtn").addEventListener("click", async ()=>
   };
 
   try{
-    const r=await fetch(`${FN_BASE}/submitComplaint`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    if(!r.ok){ const t=await r.text(); status.textContent="تعذّر إرسال الشكوى: "+t; return; }
-    const data=await r.json();
+    const r=await fetch(`${FN_BASE}/submitComplaint`,{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+
+    if(!r.ok){
+      const t=await r.text();
+      status.textContent="تعذّر إرسال الشكوى: "+t;
+      return;
+    }
+
+    const data=await r.json(); // { number, html_url }
     status.innerHTML=`تم الاستلام للمراجعة. <b>رقم الملف: ${data.number}</b> — <a href="${data.html_url}" target="_blank" rel="noopener">فتح على GitHub</a>`;
     form.reset();
-    if(window.__captchaId!=null) try{hcaptcha.reset(window.__captchaId);}catch{}
+
+    // افتح تبويب تتبع الحالة وجهّز الرقم
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
-  }catch{ status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك."; }
+  }catch(err){
+    status.textContent="تعذّر إرسال الشكوى. تحقّق من اتصالك.";
+  }
 });
 
 /* إرسال التقرير */
@@ -542,7 +565,9 @@ document.getElementById("reportForm").addEventListener("submit", async (e)=>{
     form.reset();
     document.querySelector('.tab-btn[data-tab="statusTab"]').click();
     const tn=document.getElementById("trackNumber"); if(tn){ tn.value=data.number; }
-  }catch{ status.textContent="تعذّر إرسال التقرير. تحقّق من اتصالك."; }
+  }catch{
+    status.textContent="تعذّر إرسال التقرير. تحقّق من اتصالك.";
+  }
 });
 
 /* تتبع الحالة */
@@ -568,7 +593,9 @@ document.getElementById("trackBtn").addEventListener("click", async ()=>{
         <p>${escapeHtml(d.display)}</p>
         <div class="row"><a class="pill" href="${d.html_url}" target="_blank" rel="noopener">فتح الملف على GitHub</a></div>
       </div>`;
-  }catch{ box.innerHTML="<p class='muted'>حصل خطأ أثناء الاستعلام.</p>"; }
+  }catch{
+    box.innerHTML="<p class='muted'>حصل خطأ أثناء الاستعلام.</p>";
+  }
 });
 
 /* ref= */
